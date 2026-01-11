@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions | MineBot",
-  description: "Terms and conditions for using MineBot mining platform",
+  title: "Terms & Conditions | NovaxBlockPool",
+  description: "Terms and conditions for using NovaxBlockPool mining platform",
 };
 
 export default function TermsPage() {
@@ -16,7 +16,7 @@ export default function TermsPage() {
           <div>
             <h2 className="text-2xl font-semibold">1. Acceptance of Terms</h2>
             <p className="mt-2 text-muted-foreground">
-              By accessing and using MineBot ("the Platform", "we", "us", "our"), you accept
+              By accessing and using NovaxBlockPool ("the Platform", "we", "us", "our"), you accept
               and agree to be bound by these Terms and Conditions. If you do not agree to these
               terms, you must not use our services.
             </p>
@@ -25,7 +25,7 @@ export default function TermsPage() {
           <div>
             <h2 className="text-2xl font-semibold">2. Description of Service</h2>
             <p className="mt-2 text-muted-foreground">
-              MineBot provides cloud-based cryptocurrency mining services, allowing users to
+              NovaxBlockPool provides cloud-based cryptocurrency mining services, allowing users to
               purchase hash rate plans and participate in mining operations. We facilitate the
               purchase of mining contracts and manage mining operations on behalf of users.
             </p>
@@ -129,7 +129,7 @@ export default function TermsPage() {
           <div>
             <h2 className="text-2xl font-semibold">8. Intellectual Property</h2>
             <p className="mt-2 text-muted-foreground">
-              All content, features, and functionality of the Platform are owned by MineBot and
+              All content, features, and functionality of the Platform are owned by NovaxBlockPool and
               are protected by international copyright, trademark, and other intellectual property
               laws. You may not reproduce, distribute, or create derivative works without our
               express written permission.
@@ -157,7 +157,7 @@ export default function TermsPage() {
           <div>
             <h2 className="text-2xl font-semibold">10. Indemnification</h2>
             <p className="mt-2 text-muted-foreground">
-              You agree to indemnify and hold MineBot harmless from any claims, damages,
+              You agree to indemnify and hold NovaxBlockPool harmless from any claims, damages,
               losses, liabilities, and expenses arising from your use of the Platform or violation
               of these Terms.
             </p>
@@ -184,7 +184,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-semibold">12. Governing Law</h2>
             <p className="mt-2 text-muted-foreground">
               These Terms shall be governed by and construed in accordance with the laws of the
-              jurisdiction in which MineBot operates, without regard to conflict of law
+              jurisdiction in which NovaxBlockPool operates, without regard to conflict of law
               provisions.
             </p>
           </div>
@@ -203,7 +203,7 @@ export default function TermsPage() {
             <p className="mt-2 text-muted-foreground">
               For questions about these Terms, please contact us at{" "}
               <a href="/contact" className="text-primary hover:underline">
-                support@MineBot.xyz
+                support@novaxblockpool.com
               </a>
               .
             </p>

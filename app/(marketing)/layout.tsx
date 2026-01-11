@@ -5,11 +5,11 @@ import { SiteHeader } from "@/components/marketing/site-header";
 
 export const metadata: Metadata = {
   title: {
-    default: "MineBot | AI-Powered Mining Operations",
-    template: "%s | MineBot",
+    default: "NovaxBlockPool | AI-Powered Mining Operations",
+    template: "%s | NovaxBlockPool",
   },
   description:
-    "MineBot uses advanced AI bots to autonomously optimize your cryptocurrency mining operations 24/7 for maximum profitability.",
+    "NovaxBlockPool uses advanced AI bots to autonomously optimize your cryptocurrency mining operations 24/7 for maximum profitability.",
 };
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {

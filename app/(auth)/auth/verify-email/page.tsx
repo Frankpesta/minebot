@@ -80,7 +80,7 @@ function VerifiedMessage() {
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Email verified</h1>
         <p className="text-sm text-muted-foreground">
-          Your email address is confirmed. You can now access the MineBot dashboard.
+          Your email address is confirmed. You can now access the NovaxBlockPool dashboard.
         </p>
       </div>
       <Link

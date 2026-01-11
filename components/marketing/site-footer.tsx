@@ -35,9 +35,9 @@ export function SiteFooter() {
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-base font-semibold text-foreground">
               <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/15 text-base text-primary">
-                MB
+                NBP
               </div>
-              MineBot
+              NovaxBlockPool
             </div>
             <p className="text-sm text-muted-foreground">
               AI-powered mining operations with advanced bots that optimize your cryptocurrency 
@@ -65,7 +65,7 @@ export function SiteFooter() {
           ))}
         </div>
         <div className="flex flex-col-reverse items-center justify-between gap-4 pt-6 text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} MineBot Labs. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} NovaxBlockPool Labs. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link href="/legal/privacy" className="hover:text-foreground">
               Privacy

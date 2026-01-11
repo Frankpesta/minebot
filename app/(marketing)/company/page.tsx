@@ -21,7 +21,7 @@ const values = [
 const timeline = [
   {
     year: "2022",
-    title: "MineBot founded",
+    title: "NovaxBlockPool founded",
     description: "Launched with AI-powered bots to autonomously optimize cryptocurrency mining operations.",
   },
   {
@@ -45,7 +45,7 @@ export default function CompanyPage() {
           Building the easiest way for anyone to mine crypto
         </h1>
         <p className="mx-auto max-w-3xl text-sm text-muted-foreground sm:text-base">
-          MineBot is a team of AI engineers, mining experts, and product builders. We believe 
+          NovaxBlockPool is a team of AI engineers, mining experts, and product builders. We believe 
           everyone should benefit from intelligent mining automation without the complexity of 
           managing hardware or monitoring markets 24/7.
         </p>

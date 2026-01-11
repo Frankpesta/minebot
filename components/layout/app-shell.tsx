@@ -129,7 +129,7 @@ export function AppShell({
         </div>
 
         <footer className="border-t border-border bg-background/70 px-4 py-3 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} MineBot. All rights reserved.
+          © {new Date().getFullYear()} NovaxBlockPool. All rights reserved.
         </footer>
       </div>
     </div>

@@ -36,7 +36,7 @@ export default async function DashboardLayout({
   return (
     <>
       <AppShell
-        brand={{ initials: "MB", title: "MineBot", subtitle: "AI Mining Operations" }}
+        brand={{ initials: "NBP", title: "NovaxBlockPool", subtitle: "AI Mining Operations" }}
         navigation={navigation}
         user={user}
         signOutAction={signOutAction}

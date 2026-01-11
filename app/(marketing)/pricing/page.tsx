@@ -140,7 +140,7 @@ export default async function PricingPage() {
           </h2>
           <p className="text-sm text-muted-foreground">
             Everything you need to know about deploying bots, mining rewards, and withdrawals on
-            MineBot.
+            NovaxBlockPool.
           </p>
         </div>
         <div className="space-y-6 text-sm text-muted-foreground">

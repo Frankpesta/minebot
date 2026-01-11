@@ -35,7 +35,7 @@ export default async function AdminLayout({
 
   return (
     <AppShell
-      brand={{ initials: "MB", title: "Admin Console", subtitle: "MineBot" }}
+      brand={{ initials: "NBP", title: "Admin Console", subtitle: "NovaxBlockPool" }}
       navigation={navigation}
       user={user}
       signOutAction={signOutAction}

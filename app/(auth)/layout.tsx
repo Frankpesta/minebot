@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: {
-    default: "Access MineBot",
-    template: "%s | MineBot",
+    default: "Access NovaxBlockPool",
+    template: "%s | NovaxBlockPool",
   },
   description:
-    "Secure access to MineBot. Create an account, verify your email, and deploy your AI-powered mining bots effortlessly.",
+    "Secure access to NovaxBlockPool. Create an account, verify your email, and deploy your AI-powered mining bots effortlessly.",
 };
 
 export default function AuthLayout({
@@ -24,7 +24,7 @@ export default function AuthLayout({
         <div className="relative z-10 flex max-w-md flex-col gap-8">
           <div>
             <span className="text-sm uppercase tracking-[0.4em] text-amber-300">
-              MineBot
+              NovaxBlockPool
             </span>
             <h2 className="mt-4 text-3xl font-bold leading-tight">
               AI-powered mining operations platform
@@ -49,7 +49,7 @@ export default function AuthLayout({
             className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-              MB
+              NBP
             </span>
             Back to site
           </Link>

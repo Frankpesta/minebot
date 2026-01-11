@@ -47,7 +47,7 @@ export default function SolutionsPage() {
           Mining solutions for every crypto journey
         </h1>
         <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:text-base">
-          From first-time miners to seasoned accumulators, MineBot gives you advanced AI bots that 
+          From first-time miners to seasoned accumulators, NovaxBlockPool gives you advanced AI bots that 
           autonomously optimize mining operations, maximize profits, and grow your holdings with confidence.
         </p>
       </header>

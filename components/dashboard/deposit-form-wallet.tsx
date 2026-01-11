@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { prepareDepositTransaction, type SupportedCrypto } from "@/lib/wallet/deposit";
 
-type Crypto = "ETH" | "BTC";
+type Crypto = "ETH" | "BTC" | "USDT" | "USDC";
 
 type WalletOption = {
   crypto: Crypto;
@@ -43,6 +43,8 @@ type DepositFormWalletProps = {
 const DEFAULT_MINIMUMS: Record<Crypto, number> = {
   ETH: 0.01,
   BTC: 0.0001,
+  USDT: 10,
+  USDC: 10,
 };
 
 export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps) {
@@ -140,6 +142,30 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
           });
         } else {
           throw new Error("Invalid transaction format for ETH");
+        }
+      } else if (values.crypto === "USDT" || values.crypto === "USDC") {
+        const tx = prepareDepositTransaction(selectedWallet.address, values.amount, values.crypto);
+        if ("data" in tx && "to" in tx) {
+          // For ERC20 tokens, we need to send a contract call
+          writeContract({
+            address: tx.to,
+            abi: [
+              {
+                constant: false,
+                inputs: [
+                  { name: "_to", type: "address" },
+                  { name: "_value", type: "uint256" },
+                ],
+                name: "transfer",
+                outputs: [{ name: "", type: "bool" }],
+                type: "function",
+              },
+            ],
+            functionName: "transfer",
+            args: [selectedWallet.address as `0x${string}`, parseUnits(values.amount.toString(), 6)],
+          });
+        } else {
+          throw new Error(`Invalid transaction format for ${values.crypto}`);
         }
       } else if (values.crypto === "BTC") {
         // BTC cannot be sent via wagmi (different blockchain)

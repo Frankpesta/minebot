@@ -58,7 +58,7 @@ const testimonials = [
     name: "Sophia Grant",
     role: "Community miner, Colorado",
     quote:
-      "MineBot's advanced algorithms removed all the guesswork. The bots continuously adapt to market conditions and maximize my mining efficiency.",
+      "NovaxBlockPool's advanced algorithms removed all the guesswork. The bots continuously adapt to market conditions and maximize my mining efficiency.",
   },
 ];
 
@@ -125,7 +125,7 @@ function HeroSection() {
               Advanced bots working 24/7 to optimize your mining operations
             </h1>
             <p className="max-w-xl text-pretty text-lg text-amber-100/80">
-              MineBot uses cutting-edge AI algorithms to autonomously manage and optimize your mining operations. 
+              NovaxBlockPool uses cutting-edge AI algorithms to autonomously manage and optimize your mining operations. 
               Our intelligent bots continuously analyze market conditions, adjust hash power allocation, 
               and maximize profitability while you focus on growing your crypto portfolio.
             </p>
@@ -201,12 +201,12 @@ function FeatureSection() {
     <section className="bg-muted/30">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-20 sm:px-6 lg:px-8">
         <div className="space-y-4 text-center">
-          <p className="text-xs uppercase tracking-[0.4em] text-primary">Why MineBot</p>
+          <p className="text-xs uppercase tracking-[0.4em] text-primary">Why NovaxBlockPool</p>
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Advanced AI bots that work around the clock to maximize your mining profits
           </h2>
           <p className="text-pretty text-sm text-muted-foreground sm:text-base">
-            No more manual monitoring or complex decision-making. MineBot's intelligent algorithms 
+            No more manual monitoring or complex decision-making. NovaxBlockPool's intelligent algorithms 
             handle everything—from hash power allocation to profit optimization—so you can focus 
             on what matters: growing your crypto portfolio.
           </p>
@@ -320,7 +320,7 @@ function CTASection() {
           Let AI-powered bots optimize your mining operations today.
         </h2>
         <p className="text-sm text-primary/80 sm:text-base">
-          MineBot eliminates the need for manual monitoring and complex decision-making. Deploy your 
+          NovaxBlockPool eliminates the need for manual monitoring and complex decision-making. Deploy your 
           intelligent mining bot, let it work autonomously, and watch your optimized rewards grow.
         </p>
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">

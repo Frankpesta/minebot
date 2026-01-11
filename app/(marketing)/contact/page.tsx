@@ -18,7 +18,7 @@ export default function ContactPage() {
         </h1>
         <p className="mx-auto max-w-2xl text-sm text-muted-foreground sm:text-base">
           Reach out for product demos, migration support, partnerships, or enterprise pricing. The
-          MineBot team spans AI engineering, mining infrastructure, and compliance experts.
+          NovaxBlockPool team spans AI engineering, mining infrastructure, and compliance experts.
         </p>
       </header>
 
@@ -43,12 +43,12 @@ export default function ContactPage() {
           <CardContent className="space-y-6 text-sm text-muted-foreground">
             <div>
               <p className="font-semibold text-foreground">Enterprise support</p>
-              <p>support@minebot.xyz</p>
+              <p>support@novaxblockpool.com</p>
               <p>24/7 for Growth & Enterprise plans</p>
             </div>
             <div>
               <p className="font-semibold text-foreground">Sales</p>
-              <p>sales@minebot.xyz</p>
+              <p>sales@novaxblockpool.com</p>
               <p>Response within 1 business day</p>
             </div>
             <div className="space-y-4">

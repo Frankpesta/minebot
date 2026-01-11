@@ -26,7 +26,7 @@ export function SignupForm() {
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
         <p className="text-sm text-muted-foreground">
-          Join MineBot to deploy AI-powered mining bots and optimize your operations.
+          Join NovaxBlockPool to deploy AI-powered mining bots and optimize your operations.
         </p>
       </div>
 

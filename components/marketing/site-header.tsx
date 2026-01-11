@@ -34,10 +34,10 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
           <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/15 text-base text-primary">
-            MB
+            NBP
           </div>
           <span className="hidden text-base tracking-tight text-foreground sm:inline">
-            MineBot
+            NovaxBlockPool
           </span>
         </Link>
 

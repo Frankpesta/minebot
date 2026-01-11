@@ -18,11 +18,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "MineBot | AI-Powered Mining Operations",
-    template: "%s | MineBot",
+    default: "NovaxBlockPool | AI-Powered Mining Operations",
+    template: "%s | NovaxBlockPool",
   },
   description:
-    "MineBot is an AI-powered mining operations platform with advanced bots that autonomously optimize cryptocurrency mining 24/7 for maximum profitability.",
+    "NovaxBlockPool is an AI-powered mining operations platform with advanced bots that autonomously optimize cryptocurrency mining 24/7 for maximum profitability.",
   icons: {
     icon: "/favicon.ico",
   },

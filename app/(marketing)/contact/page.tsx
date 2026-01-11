@@ -3,8 +3,8 @@ import { ContactForm } from "@/components/marketing/contact-form";
 
 const offices = [
   {
-    city: "London, United Kingdom",
-    address: "126, 126a Oxford St, London W1D 2HT, United Kingdom",
+    city: "Sydney, Australia",
+    address: "Level 25, 123 Pitt Street, Sydney NSW 2000, Australia",
   },
 ];
 

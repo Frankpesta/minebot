@@ -1,4 +1,4 @@
-const DEFAULT_APP_URL = "https://blockhashpro.xyz";
+const DEFAULT_APP_URL = "https://novaxblockpool.com";
 
 export function getAppBaseUrl() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;

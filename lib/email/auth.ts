@@ -4,7 +4,7 @@ import { getResendClient } from "./client";
 import { VerificationEmail } from "@/emails/verification-email";
 import { PasswordResetEmail } from "@/emails/password-reset-email";
 
-const DEFAULT_FROM_EMAIL = "blockhashpro <notifications@notifications.novaxblockpool.com>";
+const DEFAULT_FROM_EMAIL = "Novaxblockpool <notifications@notifications.novaxblockpool.com>";
 
 function getFromEmail() {
   return process.env.RESEND_FROM_EMAIL ?? DEFAULT_FROM_EMAIL;
@@ -38,7 +38,7 @@ export async function sendVerificationEmail({
     const result = await client.emails.send({
       from: getFromEmail(),
       to: email,
-      subject: "Confirm your email address - blockhashpro",
+      subject: "Confirm your email address - Novaxblockpool",
       html: emailHtml,
     });
 
@@ -83,7 +83,7 @@ export async function sendPasswordResetEmail({
     const result = await client.emails.send({
       from: getFromEmail(),
       to: email,
-      subject: "Reset your password - blockhashpro",
+      subject: "Reset your password - Novaxblockpool",
       html: emailHtml,
     });
 

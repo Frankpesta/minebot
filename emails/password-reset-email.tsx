@@ -19,13 +19,13 @@ export const PasswordResetEmail = ({ resetUrl }: PasswordResetEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Reset your blockhashpro account password</Preview>
+      <Preview>Reset your Novaxblockpool account password</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Password Reset Request</Heading>
           
           <Text style={text}>
-            We received a request to reset the password for your blockhashpro account. If you made this request, click the button below to create a new password.
+            We received a request to reset the password for your Novaxblockpool account. If you made this request, click the button below to create a new password.
           </Text>
 
           <Section style={buttonContainer}>
@@ -52,7 +52,7 @@ export const PasswordResetEmail = ({ resetUrl }: PasswordResetEmailProps) => {
 
           <Text style={footer}>
             Best regards,<br />
-            The blockhashpro Team
+            The Novaxblockpool Team
           </Text>
         </Container>
       </Body>

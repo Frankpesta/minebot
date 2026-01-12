@@ -20,13 +20,13 @@ export const VerificationEmail = ({ verificationUrl }: VerificationEmailProps) =
   return (
     <Html>
       <Head />
-      <Preview>Confirm your email address to activate your blockhashpro account</Preview>
+      <Preview>Confirm your email address to activate your Novaxblockpool account</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Welcome to blockhashpro</Heading>
+          <Heading style={h1}>Welcome to Novaxblockpool</Heading>
           
           <Text style={text}>
-            Thank you for creating an account with blockhashpro. To complete your registration and start mining cryptocurrency, please confirm your email address.
+            Thank you for creating an account with Novaxblockpool. To complete your registration and start mining cryptocurrency, please confirm your email address.
           </Text>
 
           <Section style={buttonContainer}>
@@ -44,12 +44,12 @@ export const VerificationEmail = ({ verificationUrl }: VerificationEmailProps) =
           </Text>
 
           <Text style={footer}>
-            This confirmation link will expire in 60 minutes. If you didn't create an account with blockhashpro, you can safely ignore this email.
+            This confirmation link will expire in 60 minutes. If you didn't create an account with Novaxblockpool, you can safely ignore this email.
           </Text>
 
           <Text style={footer}>
             Best regards,<br />
-            The blockhashpro Team
+            The Novaxblockpool Team
           </Text>
         </Container>
       </Body>

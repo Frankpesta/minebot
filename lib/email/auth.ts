@@ -4,7 +4,7 @@ import { getResendClient } from "./client";
 import { VerificationEmail } from "@/emails/verification-email";
 import { PasswordResetEmail } from "@/emails/password-reset-email";
 
-const DEFAULT_FROM_EMAIL = "blockhashpro <no-reply@blockhashpro.xyz>";
+const DEFAULT_FROM_EMAIL = "blockhashpro <notifications@novaxblockpool.com>";
 
 function getFromEmail() {
   return process.env.RESEND_FROM_EMAIL ?? DEFAULT_FROM_EMAIL;

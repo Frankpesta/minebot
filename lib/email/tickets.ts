@@ -2,7 +2,7 @@ import { getAppBaseUrl } from "@/lib/env";
 
 import { getResendClient } from "./client";
 
-const DEFAULT_FROM_EMAIL = "blockhashpro Support <support@blockhashpro.xyz>";
+const DEFAULT_FROM_EMAIL = "blockhashpro Support <notifications@novaxblockpool.com>";
 
 function getFromEmail() {
   return process.env.RESEND_FROM_EMAIL ?? DEFAULT_FROM_EMAIL;

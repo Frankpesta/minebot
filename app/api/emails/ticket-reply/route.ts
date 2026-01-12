@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Email sending is non-blocking - errors are logged but don't break the flow
     await sendTicketReplyEmail({
       to,
       ticketSubject,
@@ -22,14 +23,13 @@ export async function POST(request: NextRequest) {
       userName,
     });
 
+    // Always return success - email failures are logged but don't affect the response
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error sending ticket reply email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: "Failed to send email", details: errorMessage },
-      { status: 500 },
-    );
+    // This catch is for unexpected errors (e.g., JSON parsing, etc.)
+    console.error("Unexpected error in ticket reply email route:", error);
+    // Still return success to not break the application flow
+    return NextResponse.json({ success: true });
   }
 }
 

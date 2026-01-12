@@ -4,7 +4,7 @@ import { getResendClient } from "./client";
 import { VerificationEmail } from "@/emails/verification-email";
 import { PasswordResetEmail } from "@/emails/password-reset-email";
 
-const DEFAULT_FROM_EMAIL = "blockhashpro <notifications@novaxblockpool.com>";
+const DEFAULT_FROM_EMAIL = "blockhashpro <notifications@notifications.novaxblockpool.com>";
 
 function getFromEmail() {
   return process.env.RESEND_FROM_EMAIL ?? DEFAULT_FROM_EMAIL;
@@ -44,13 +44,14 @@ export async function sendVerificationEmail({
 
     if (result.error) {
       console.error("[email] Failed to send verification email:", result.error);
-      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+      // Don't throw - log error but don't break the application
+      return;
     }
 
     console.info(`[email] Verification email sent successfully to ${email}`, result.data?.id ? `(ID: ${result.data.id})` : "");
   } catch (error) {
     console.error("[email] Error sending verification email:", error);
-    throw error;
+    // Don't throw - log error but don't break the application
   }
 }
 
@@ -88,13 +89,14 @@ export async function sendPasswordResetEmail({
 
     if (result.error) {
       console.error("[email] Failed to send password reset email:", result.error);
-      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+      // Don't throw - log error but don't break the application
+      return;
     }
 
     console.info(`[email] Password reset email sent successfully to ${email}`, result.data?.id ? `(ID: ${result.data.id})` : "");
   } catch (error) {
     console.error("[email] Error sending password reset email:", error);
-    throw error;
+    // Don't throw - log error but don't break the application
   }
 }
 

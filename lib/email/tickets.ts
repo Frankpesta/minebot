@@ -2,7 +2,7 @@ import { getAppBaseUrl } from "@/lib/env";
 
 import { getResendClient } from "./client";
 
-const DEFAULT_FROM_EMAIL = "blockhashpro Support <notifications@novaxblockpool.com>";
+const DEFAULT_FROM_EMAIL = "blockhashpro Support <notifications@notifications.novaxblockpool.com>";
 
 function getFromEmail() {
   return process.env.RESEND_FROM_EMAIL ?? DEFAULT_FROM_EMAIL;
@@ -73,13 +73,14 @@ export async function sendTicketReplyEmail({
 
     if (result.error) {
       console.error("[email] Failed to send ticket reply email:", result.error);
-      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+      // Don't throw - log error but don't break the application
+      return;
     }
 
     console.info(`[email] Ticket reply email sent successfully to ${to}`, result.data?.id ? `(ID: ${result.data.id})` : "");
   } catch (error) {
     console.error("[email] Error sending ticket reply email:", error);
-    throw error;
+    // Don't throw - log error but don't break the application
   }
 }
 
@@ -146,13 +147,14 @@ export async function sendTicketStatusChangeEmail({
 
     if (result.error) {
       console.error("[email] Failed to send ticket status change email:", result.error);
-      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+      // Don't throw - log error but don't break the application
+      return;
     }
 
     console.info(`[email] Ticket status change email sent successfully to ${to}`, result.data?.id ? `(ID: ${result.data.id})` : "");
   } catch (error) {
     console.error("[email] Error sending ticket status change email:", error);
-    throw error;
+    // Don't throw - log error but don't break the application
   }
 }
 

@@ -28,18 +28,30 @@ export async function sendVerificationEmail({
     return;
   }
 
-  const emailHtml = await render(
-    VerificationEmail({
-      verificationUrl: url,
-    }),
-  );
+  try {
+    const emailHtml = await render(
+      VerificationEmail({
+        verificationUrl: url,
+      }),
+    );
 
-  await client.emails.send({
-    from: getFromEmail(),
-    to: email,
-    subject: "Confirm your email address - blockhashpro",
-    html: emailHtml,
-  });
+    const result = await client.emails.send({
+      from: getFromEmail(),
+      to: email,
+      subject: "Confirm your email address - blockhashpro",
+      html: emailHtml,
+    });
+
+    if (result.error) {
+      console.error("[email] Failed to send verification email:", result.error);
+      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+    }
+
+    console.info(`[email] Verification email sent successfully to ${email}`, result.data?.id ? `(ID: ${result.data.id})` : "");
+  } catch (error) {
+    console.error("[email] Error sending verification email:", error);
+    throw error;
+  }
 }
 
 export async function sendPasswordResetEmail({
@@ -60,17 +72,29 @@ export async function sendPasswordResetEmail({
     return;
   }
 
-  const emailHtml = await render(
-    PasswordResetEmail({
-      resetUrl: url,
-    }),
-  );
+  try {
+    const emailHtml = await render(
+      PasswordResetEmail({
+        resetUrl: url,
+      }),
+    );
 
-  await client.emails.send({
-    from: getFromEmail(),
-    to: email,
-    subject: "Reset your password - blockhashpro",
-    html: emailHtml,
-  });
+    const result = await client.emails.send({
+      from: getFromEmail(),
+      to: email,
+      subject: "Reset your password - blockhashpro",
+      html: emailHtml,
+    });
+
+    if (result.error) {
+      console.error("[email] Failed to send password reset email:", result.error);
+      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+    }
+
+    console.info(`[email] Password reset email sent successfully to ${email}`, result.data?.id ? `(ID: ${result.data.id})` : "");
+  } catch (error) {
+    console.error("[email] Error sending password reset email:", error);
+    throw error;
+  }
 }
 

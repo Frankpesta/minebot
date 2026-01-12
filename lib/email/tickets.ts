@@ -38,11 +38,12 @@ export async function sendTicketReplyEmail({
     ? `Re: ${ticketSubject} - blockhashpro Support`
     : `New reply on ticket: ${ticketSubject}`;
 
-  await client.emails.send({
-    from: getFromEmail(),
-    to,
-    subject,
-    html: `
+  try {
+    const result = await client.emails.send({
+      from: getFromEmail(),
+      to,
+      subject,
+      html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
           <h2 style="margin: 0;">blockhashpro Support</h2>
@@ -68,7 +69,18 @@ export async function sendTicketReplyEmail({
         </div>
       </div>
     `,
-  });
+    });
+
+    if (result.error) {
+      console.error("[email] Failed to send ticket reply email:", result.error);
+      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+    }
+
+    console.info(`[email] Ticket reply email sent successfully to ${to}`, result.data?.id ? `(ID: ${result.data.id})` : "");
+  } catch (error) {
+    console.error("[email] Error sending ticket reply email:", error);
+    throw error;
+  }
 }
 
 export async function sendTicketStatusChangeEmail({
@@ -102,11 +114,12 @@ export async function sendTicketStatusChangeEmail({
     closed: "Closed",
   };
 
-  await client.emails.send({
-    from: getFromEmail(),
-    to,
-    subject: `Ticket ${statusLabels[status] || status}: ${ticketSubject}`,
-    html: `
+  try {
+    const result = await client.emails.send({
+      from: getFromEmail(),
+      to,
+      subject: `Ticket ${statusLabels[status] || status}: ${ticketSubject}`,
+      html: `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
           <h2 style="margin: 0;">blockhashpro Support</h2>
@@ -129,6 +142,17 @@ export async function sendTicketStatusChangeEmail({
         </div>
       </div>
     `,
-  });
+    });
+
+    if (result.error) {
+      console.error("[email] Failed to send ticket status change email:", result.error);
+      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+    }
+
+    console.info(`[email] Ticket status change email sent successfully to ${to}`, result.data?.id ? `(ID: ${result.data.id})` : "");
+  } catch (error) {
+    console.error("[email] Error sending ticket status change email:", error);
+    throw error;
+  }
 }
 

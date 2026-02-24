@@ -25,24 +25,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { getWithdrawalFee } from "@/lib/payments/fees";
-
-type Crypto = "ETH" | "USDT" | "USDC";
+import type { SupportedCrypto } from "@/lib/crypto/constants";
+import { MIN_WITHDRAWAL } from "@/lib/crypto/constants";
 
 type WithdrawFormProps = {
-  balances: Record<Crypto, number>;
-};
-
-const MINIMUMS: Record<Crypto, number> = {
-  ETH: 0.01,
-  USDT: 25,
-  USDC: 25,
+  balances: Record<string, number>;
 };
 
 export function WithdrawForm({ balances }: WithdrawFormProps) {
   const [isSubmitting, startSubmit] = useTransition();
-  const availableCryptos = ["ETH", "USDT", "USDC"].filter(
-    (asset) => balances[asset as Crypto] !== undefined,
-  ) as Crypto[];
+  const availableCryptos = (Object.entries(balances) as Array<[SupportedCrypto, number]>)
+    .filter(([, value]) => value > 0)
+    .map(([asset]) => asset);
   const defaultCrypto = availableCryptos[0] ?? "USDT";
 
   const form = useForm<WithdrawalRequestInput>({
@@ -56,13 +50,13 @@ export function WithdrawForm({ balances }: WithdrawFormProps) {
     },
   });
 
-  const crypto = form.watch("crypto") as Crypto;
+  const crypto = form.watch("crypto") as SupportedCrypto;
   const rawAmount = form.watch("amount");
   const amount = Number(rawAmount) || 0;
   const available = balances[crypto] ?? 0;
   const networkFee = useMemo(() => getWithdrawalFee(crypto, amount), [crypto, amount]);
   const finalAmount = amount > networkFee ? amount - networkFee : 0;
-  const minimum = MINIMUMS[crypto] ?? 0;
+  const minimum = MIN_WITHDRAWAL[crypto] ?? 0;
 
   useEffect(() => {
     form.setValue("requestedFee", networkFee);
@@ -109,6 +103,14 @@ export function WithdrawForm({ balances }: WithdrawFormProps) {
     });
   }
 
+  if (availableCryptos.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No balance available for withdrawal. Deposit funds to your platform wallet first.
+      </p>
+    );
+  }
+
   return (
     <Form {...form}>
       <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)}>
@@ -125,7 +127,7 @@ export function WithdrawForm({ balances }: WithdrawFormProps) {
                 >
                   {availableCryptos.map((asset) => (
                     <option key={asset} value={asset}>
-                      {asset} • Available {balances[asset].toLocaleString()}
+                      {asset} • Available {(balances[asset] ?? 0).toLocaleString()}
                     </option>
                   ))}
                 </select>

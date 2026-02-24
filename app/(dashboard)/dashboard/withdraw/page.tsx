@@ -11,13 +11,8 @@ import {
 } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getConvexClient } from "@/lib/convex/client";
+import { CRYPTO_NAMES } from "@/lib/crypto/constants";
 import { formatDate } from "@/lib/utils";
-
-const CRYPTO_LABELS: Record<"ETH" | "USDT" | "USDC", string> = {
-  ETH: "Ethereum",
-  USDT: "Tether (ERC-20)",
-  USDC: "USD Coin (ERC-20)",
-};
 
 export default async function WithdrawPage() {
   const current = await getCurrentUser();
@@ -31,7 +26,8 @@ export default async function WithdrawPage() {
     limit: 25,
   });
 
-  const platformBalances = current.user.platformBalance;
+  const platformBalances = current.user.platformBalance as Record<string, number>;
+  const balanceEntries = Object.entries(platformBalances).filter(([, value]) => value > 0);
 
   return (
     <div className="space-y-6">
@@ -49,18 +45,20 @@ export default async function WithdrawPage() {
             <CardDescription>Balances eligible for withdrawal from your platform wallet.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            {(Object.entries(platformBalances) as Array<["ETH" | "USDT" | "USDC", number]>).map(
-              ([currency, value]) => (
+            {balanceEntries.length === 0 ? (
+              <p className="text-muted-foreground">No balance available for withdrawal.</p>
+            ) : (
+              balanceEntries.map(([currency, value]) => (
                 <div key={currency} className="flex items-center justify-between rounded-md border border-border/50 px-3 py-2">
                   <div>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">
                       {currency}
                     </p>
-                    <p className="font-semibold">{CRYPTO_LABELS[currency]}</p>
+                    <p className="font-semibold">{CRYPTO_NAMES[currency as keyof typeof CRYPTO_NAMES] ?? currency}</p>
                   </div>
                   <span className="font-medium tabular-nums">{value.toLocaleString()}</span>
                 </div>
-              ),
+              ))
             )}
             <p className="text-xs text-muted-foreground">
               Payouts are processed manually by administrators. Status updates will appear below.

@@ -5,12 +5,29 @@ import { internal } from "./_generated/api";
 import type { Id, Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 
-type Crypto = "ETH" | "BTC" | "USDT" | "USDC";
+const depositCryptoUnion = v.union(
+  v.literal("BTC"),
+  v.literal("ETH"),
+  v.literal("SOL"),
+  v.literal("LTC"),
+  v.literal("BNB"),
+  v.literal("ADA"),
+  v.literal("XRP"),
+  v.literal("DOGE"),
+  v.literal("DOT"),
+  v.literal("MATIC"),
+  v.literal("AVAX"),
+  v.literal("ATOM"),
+  v.literal("LINK"),
+  v.literal("UNI"),
+  v.literal("USDT"),
+  v.literal("USDC"),
+);
 
 export const createDepositRequest = mutation({
   args: {
     userId: v.id("users"),
-    crypto: v.union(v.literal("ETH"), v.literal("BTC"), v.literal("USDT"), v.literal("USDC")),
+    crypto: depositCryptoUnion,
     amount: v.number(),
     txHash: v.optional(v.string()),
   },
@@ -106,39 +123,14 @@ export const updateDepositStatusInternal = internalMutation({
     }
 
     if (args.status === "approved") {
-      if (deposit.crypto === "BTC") {
-        // Handle BTC deposit
-        await ctx.db.patch(user._id, {
-          platformBalance: {
-            ...user.platformBalance,
-            BTC: (user.platformBalance.BTC ?? 0) + (deposit.amount ?? 0),
-          },
-        });
-      } else if (deposit.crypto === "ETH") {
-        // Handle ETH deposit
-        await ctx.db.patch(user._id, {
-          platformBalance: {
-            ...user.platformBalance,
-            ETH: user.platformBalance.ETH + (deposit.amount ?? 0),
-          },
-        });
-      } else if (deposit.crypto === "USDT") {
-        // Handle USDT deposit
-        await ctx.db.patch(user._id, {
-          platformBalance: {
-            ...user.platformBalance,
-            USDT: user.platformBalance.USDT + (deposit.amount ?? 0),
-          },
-        });
-      } else if (deposit.crypto === "USDC") {
-        // Handle USDC deposit
-        await ctx.db.patch(user._id, {
-          platformBalance: {
-            ...user.platformBalance,
-            USDC: user.platformBalance.USDC + (deposit.amount ?? 0),
-          },
-        });
-      }
+      const existing = (user.platformBalance as Record<string, unknown>)[deposit.crypto];
+      const current = typeof existing === "number" ? existing : 0;
+      await ctx.db.patch(user._id, {
+        platformBalance: {
+          ...user.platformBalance,
+          [deposit.crypto]: current + (deposit.amount ?? 0),
+        },
+      });
     }
 
     await ctx.db.patch(args.depositId, {
@@ -242,13 +234,18 @@ export const startMiningFromDeposit = internalAction({
   args: {
     depositId: v.id("deposits"),
     userId: v.id("users"),
-    crypto: v.union(v.literal("ETH"), v.literal("BTC"), v.literal("USDT"), v.literal("USDC")),
+    crypto: depositCryptoUnion,
     amount: v.number(),
   },
   handler: async (ctx, args) => {
+    // Only auto-start mining for BTC, ETH, USDT, USDC (deduction logic supports these)
+    if (!["BTC", "ETH", "USDT", "USDC"].includes(args.crypto)) {
+      return;
+    }
+
     // Convert deposit amount to USD
     let depositAmountUSD: number;
-    
+
     if (args.crypto === "ETH") {
       // Fetch ETH price
       try {
@@ -305,7 +302,7 @@ export const startMiningFromDeposit = internalAction({
       // For stablecoins (USDT, USDC), use 1:1 conversion to USD
       depositAmountUSD = args.amount;
     } else {
-      throw new ConvexError(`Unsupported deposit crypto: ${String(args.crypto)}`);
+      return;
     }
 
     // Find matching plan based on deposit amount
@@ -388,7 +385,7 @@ export const startMiningFromDeposit = internalAction({
         btcPriceUSD = data.bitcoin?.usd ?? 60000;
         ethPriceUSD = data.ethereum?.usd ?? 3000;
       }
-    } catch (error) {
+    } catch {
       console.warn("Failed to fetch prices for balance calculation, using fallback prices");
     }
     

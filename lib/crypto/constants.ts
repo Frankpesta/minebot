@@ -45,3 +45,43 @@ export const CRYPTO_NAMES: Record<SupportedCrypto, string> = {
   USDC: "USD Coin",
 };
 
+/** Minimum deposit amounts per coin (for validation) */
+export const MIN_DEPOSIT: Partial<Record<SupportedCrypto, number>> = {
+  BTC: 0.0001,
+  ETH: 0.01,
+  SOL: 0.1,
+  LTC: 0.01,
+  BNB: 0.01,
+  ADA: 1,
+  XRP: 10,
+  DOGE: 10,
+  DOT: 0.1,
+  MATIC: 1,
+  AVAX: 0.1,
+  ATOM: 0.1,
+  LINK: 0.1,
+  UNI: 0.1,
+  USDT: 10,
+  USDC: 10,
+};
+
+/** Minimum withdrawal amounts per coin */
+export const MIN_WITHDRAWAL: Partial<Record<SupportedCrypto, number>> = {
+  BTC: 0.0001,
+  ETH: 0.01,
+  SOL: 0.1,
+  LTC: 0.01,
+  BNB: 0.01,
+  ADA: 1,
+  XRP: 10,
+  DOGE: 10,
+  DOT: 0.1,
+  MATIC: 1,
+  AVAX: 0.1,
+  ATOM: 0.1,
+  LINK: 0.1,
+  UNI: 0.1,
+  USDT: 25,
+  USDC: 25,
+};
+

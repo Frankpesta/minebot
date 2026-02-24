@@ -22,36 +22,29 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
-
-type Crypto = "ETH" | "BTC" | "USDT" | "USDC";
+import type { SupportedCrypto } from "@/lib/crypto/constants";
+import { MIN_DEPOSIT } from "@/lib/crypto/constants";
 
 type WalletOption = {
-  crypto: Crypto;
+  crypto: string;
   address: string;
   label?: string | null;
 };
 
 type DepositFormProps = {
   wallets: WalletOption[];
-  minimums?: Partial<Record<Crypto, number>>;
-};
-
-const DEFAULT_MINIMUMS: Record<Crypto, number> = {
-  ETH: 0.01,
-  BTC: 0.0001,
-  USDT: 10,
-  USDC: 10,
+  minimums?: Partial<Record<SupportedCrypto, number>>;
 };
 
 export function DepositForm({ wallets, minimums }: DepositFormProps) {
   const [isSubmitting, startSubmit] = useTransition();
 
-  const walletMap = wallets.reduce<Record<Crypto, WalletOption>>((accumulator, wallet) => {
-    accumulator[wallet.crypto] = wallet;
-    return accumulator;
-  }, {} as Record<Crypto, WalletOption>);
+  const walletMap = wallets.reduce<Record<string, WalletOption>>((acc, wallet) => {
+    acc[wallet.crypto] = wallet;
+    return acc;
+  }, {});
 
-  const defaultCrypto: Crypto = wallets[0]?.crypto ?? "ETH";
+  const defaultCrypto = wallets[0]?.crypto ?? "ETH";
   const isDisabled = wallets.length === 0;
 
   const form = useForm<DepositRequestInput>({
@@ -63,9 +56,9 @@ export function DepositForm({ wallets, minimums }: DepositFormProps) {
     },
   });
 
-  const selectedCrypto = form.watch("crypto") as Crypto;
+  const selectedCrypto = form.watch("crypto");
   const selectedWallet = selectedCrypto ? walletMap[selectedCrypto] : undefined;
-  const minAmount = minimums?.[selectedCrypto] ?? DEFAULT_MINIMUMS[selectedCrypto] ?? 0;
+  const minAmount = minimums?.[selectedCrypto as SupportedCrypto] ?? MIN_DEPOSIT[selectedCrypto as SupportedCrypto] ?? 0;
 
   async function handleSubmit(rawValues: DepositRequestInput) {
     const parsed = depositRequestSchema.safeParse(rawValues);

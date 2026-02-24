@@ -6,6 +6,9 @@ import type { Doc } from "@/convex/_generated/dataModel";
 import { getConvexClient } from "@/lib/convex/client";
 import { formatCurrency } from "@/lib/utils";
 
+// Always fetch plans on request so the marketing page shows current plans (avoids static build with empty list)
+export const dynamic = "force-dynamic";
+
 function formatHashRate(hashRate: number, unit: string): string {
   return `${hashRate.toLocaleString()} ${unit}`;
 }

@@ -25,26 +25,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
-import { prepareDepositTransaction, type SupportedCrypto } from "@/lib/wallet/deposit";
-
-type Crypto = "ETH" | "BTC" | "USDT" | "USDC";
+import { prepareDepositTransaction } from "@/lib/wallet/deposit";
+import type { SupportedCrypto } from "@/lib/crypto/constants";
+import { MIN_DEPOSIT } from "@/lib/crypto/constants";
 
 type WalletOption = {
-  crypto: Crypto;
+  crypto: string;
   address: string;
   label?: string | null;
 };
 
 type DepositFormWalletProps = {
   wallets: WalletOption[];
-  minimums?: Partial<Record<Crypto, number>>;
-};
-
-const DEFAULT_MINIMUMS: Record<Crypto, number> = {
-  ETH: 0.01,
-  BTC: 0.0001,
-  USDT: 10,
-  USDC: 10,
+  minimums?: Partial<Record<SupportedCrypto, number>>;
 };
 
 export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps) {
@@ -60,12 +53,12 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
   const [isSubmitting, startSubmit] = useTransition();
   const [submittedTxHash, setSubmittedTxHash] = useState<string>("");
 
-  const walletMap = wallets.reduce<Record<Crypto, WalletOption>>((accumulator, wallet) => {
-    accumulator[wallet.crypto] = wallet;
-    return accumulator;
-  }, {} as Record<Crypto, WalletOption>);
+  const walletMap = wallets.reduce<Record<string, WalletOption>>((acc, wallet) => {
+    acc[wallet.crypto] = wallet;
+    return acc;
+  }, {});
 
-  const defaultCrypto: Crypto = wallets[0]?.crypto ?? "ETH";
+  const defaultCrypto = wallets[0]?.crypto ?? "ETH";
   const isDisabled = wallets.length === 0;
 
   const form = useForm<DepositRequestInput>({
@@ -77,9 +70,9 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
     },
   });
 
-  const selectedCrypto = form.watch("crypto") as Crypto;
+  const selectedCrypto = form.watch("crypto");
   const selectedWallet = selectedCrypto ? walletMap[selectedCrypto] : undefined;
-  const minAmount = minimums?.[selectedCrypto] ?? DEFAULT_MINIMUMS[selectedCrypto] ?? 0;
+  const minAmount = minimums?.[selectedCrypto as SupportedCrypto] ?? MIN_DEPOSIT[selectedCrypto as SupportedCrypto] ?? 0;
 
   // Auto-submit deposit request when transaction is confirmed
   useEffect(() => {
@@ -167,13 +160,10 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
         } else {
           throw new Error(`Invalid transaction format for ${values.crypto}`);
         }
-      } else if (values.crypto === "BTC") {
-        // BTC cannot be sent via wagmi (different blockchain)
-        // User needs to send BTC manually and provide txHash
-        toast.info("Please send BTC manually to the address shown above, then provide the transaction hash below.");
-        return;
       } else {
-        throw new Error(`Unsupported crypto: ${values.crypto}`);
+        // BTC, SOL, LTC, etc. require manual send + tx hash (different chains or no in-app send)
+        toast.info("Please send the funds manually to the address above, then enter the transaction hash below.");
+        return;
       }
 
       toast.success("Transaction sent! Waiting for confirmation...");

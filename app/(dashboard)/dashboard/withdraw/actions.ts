@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { api } from "@/convex/_generated/api";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getConvexClient } from "@/lib/convex/client";
+import type { SupportedCrypto } from "@/lib/crypto/constants";
 import { getWithdrawalFee } from "@/lib/payments/fees";
 
 import { withdrawalRequestSchema, type WithdrawalRequestValues } from "./validators";
@@ -23,11 +24,12 @@ export async function submitWithdrawalRequest(values: WithdrawalRequestValues) {
     return { success: false, error: "You must be signed in to request a withdrawal." };
   }
 
-  const fee = getWithdrawalFee(parsed.data.crypto, parsed.data.amount);
+  const crypto = parsed.data.crypto as SupportedCrypto;
+  const fee = getWithdrawalFee(crypto, parsed.data.amount);
   if (parsed.data.amount <= fee) {
     return {
       success: false,
-      error: `Amount must be greater than the network fee (${fee} ${parsed.data.crypto}).`,
+      error: `Amount must be greater than the network fee (${fee} ${crypto}).`,
     };
   }
 
@@ -36,7 +38,7 @@ export async function submitWithdrawalRequest(values: WithdrawalRequestValues) {
   try {
     await convex.mutation(api.withdrawals.createWithdrawalRequest, {
       userId: current.user._id,
-      crypto: parsed.data.crypto,
+      crypto,
       amount: parsed.data.amount,
       destinationAddress: parsed.data.destinationAddress,
       requestedFee: fee,

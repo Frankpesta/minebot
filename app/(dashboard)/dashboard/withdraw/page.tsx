@@ -26,8 +26,10 @@ export default async function WithdrawPage() {
     limit: 25,
   });
 
-  const platformBalances = current.user.platformBalance as Record<string, number>;
-  const balanceEntries = Object.entries(platformBalances).filter(([, value]) => value > 0);
+  const platformBalances = current.user.platformBalance as unknown as Record<string, number>;
+  const balanceEntries = Object.entries(platformBalances).filter(
+    (entry): entry is [string, number] => typeof entry[1] === "number" && entry[1] > 0,
+  );
 
   return (
     <div className="space-y-6">

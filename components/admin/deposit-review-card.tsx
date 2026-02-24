@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
+import type { SupportedCrypto } from "@/lib/crypto/constants";
 import { formatDate } from "@/lib/utils";
 
 type AdminDeposit = {
   _id: string;
   userEmail: string | null;
   amount: number;
-  crypto: "ETH" | "BTC" | "USDT" | "USDC";
+  crypto: SupportedCrypto;
   status: "pending" | "approved" | "rejected";
   createdAt: number;
   walletAddress: string;

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { api } from "@/convex/_generated/api";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getConvexClient } from "@/lib/convex/client";
+import type { SupportedCrypto } from "@/lib/crypto/constants";
 
 import { depositRequestSchema, type DepositRequestValues } from "./validators";
 
@@ -27,7 +28,7 @@ export async function submitDepositRequest(values: DepositRequestValues) {
   try {
     await convex.mutation(api.deposits.createDepositRequest, {
       userId: current.user._id,
-      crypto: parsed.data.crypto,
+      crypto: parsed.data.crypto as SupportedCrypto,
       amount: parsed.data.amount,
       txHash: parsed.data.txHash,
     });

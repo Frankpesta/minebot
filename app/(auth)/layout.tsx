@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Script from "next/script";
 
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,27 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid min-h-screen w-full grid-cols-1 bg-background md:grid-cols-[1fr_480px]">
+    <>
+      <Script
+        id="smartsupp-chat"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            var _smartsupp = _smartsupp || {};
+            _smartsupp.key = '80491241bcf72f6c209a9d3f2e80423a1fc472c9';
+            window.smartsupp||(function(d) {
+              var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+              s=d.getElementsByTagName('script')[0];c=d.createElement('script');
+              c.type='text/javascript';c.charset='utf-8';c.async=true;
+              c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
+            })(document);
+          `,
+        }}
+      />
+      <noscript>
+        Powered by <a href="https://www.smartsupp.com" target="_blank" rel="noopener noreferrer">Smartsupp</a>
+      </noscript>
+      <div className="grid min-h-screen w-full grid-cols-1 bg-background md:grid-cols-[1fr_480px]">
       <div className="relative hidden items-center justify-center bg-gradient-to-br from-amber-950 via-amber-900 to-amber-800 px-12 text-amber-50 md:flex">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(217,119,6,0.25),_transparent_55%)]" />
         <div className="relative z-10 flex max-w-md flex-col gap-8">
@@ -76,6 +97,7 @@ export default function AuthLayout({
         </div>
       </div>
     </div>
+    </>
   );
 }
 

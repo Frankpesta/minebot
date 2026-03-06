@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -11,7 +12,13 @@ import { getCryptoPrices, calculateBalanceUSD } from "@/lib/crypto-prices";
 
 export default async function WalletPage() {
   const current = await getCurrentUser();
-  const user = current?.user;
+  if (!current) {
+    return null;
+  }
+  if (current.user.kycStatus !== "approved") {
+    redirect("/dashboard/verification");
+  }
+  const user = current.user;
 
   // Collect all coins from balances
   const platformCoins: string[] = [];

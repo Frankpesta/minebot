@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { WithdrawForm } from "@/components/dashboard/withdraw-form";
@@ -18,6 +19,9 @@ export default async function WithdrawPage() {
   const current = await getCurrentUser();
   if (!current) {
     return null;
+  }
+  if (current.user.kycStatus !== "approved") {
+    redirect("/dashboard/verification");
   }
 
   const convex = getConvexClient();

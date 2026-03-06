@@ -6,11 +6,13 @@ import type { SidebarNavItem } from "@/components/dashboard/sidebar-nav";
 import { getCurrentUser, requireAdminSession } from "@/lib/auth/session";
 
 const navigation = [
-  { href: "/admin", label: "Overview", icon: "shield-check" },
+  { href: "/admin", label: "Overview", icon: "home" },
   { href: "/admin/deposits", label: "Deposits", icon: "wallet-minimal" },
+  { href: "/admin/kyc", label: "KYC", icon: "shield-check" },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: "compass" },
   { href: "/admin/mining-packages", label: "Mining Packages", icon: "bar-chart-3" },
   { href: "/admin/users", label: "Users", icon: "users" },
+  { href: "/admin/balance", label: "Balance", icon: "coins" },
   { href: "/admin/profiles", label: "Profiles", icon: "users" },
   { href: "/admin/referrals", label: "Referrals", icon: "activity" },
   { href: "/admin/tickets", label: "Tickets", icon: "message-square" },

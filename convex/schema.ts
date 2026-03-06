@@ -60,12 +60,14 @@ export default defineSchema({
     referredBy: v.optional(v.id("users")),
     referralBonusEarned: v.optional(v.number()),
     totalReferrals: v.optional(v.number()),
+    kycStatus: v.optional(v.union(v.literal("none"), v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
   })
     .index("by_email", ["email"])
     .index("by_verification_token", ["verificationToken"])
     .index("by_reset_token", ["resetToken"])
     .index("by_referral_code", ["referralCode"])
-    .index("by_referred_by", ["referredBy"]),
+    .index("by_referred_by", ["referredBy"])
+    .index("by_kyc_status", ["kycStatus"]),
 
   sessions: defineTable({
     userId: v.id("users"),
@@ -307,6 +309,8 @@ export default defineSchema({
       v.literal("withdrawal_approved"),
       v.literal("withdrawal_rejected"),
       v.literal("mining_completed"),
+      v.literal("kyc_approved"),
+      v.literal("kyc_rejected"),
     ),
     title: v.string(),
     message: v.string(),
@@ -316,5 +320,19 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_unread", ["userId", "isRead"]),
+
+  kycSubmissions: defineTable({
+    userId: v.id("users"),
+    documentType: v.union(v.literal("national_id"), v.literal("drivers_license")),
+    frontImageId: v.id("_storage"),
+    backImageId: v.id("_storage"),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    submittedAt: v.number(),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.id("users")),
+    rejectionReason: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
 });
 

@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 
 const navigation = [
   { href: "/dashboard", label: "Overview", icon: "home" },
+  { href: "/dashboard/verification", label: "Verification", icon: "shield-check" },
   { href: "/dashboard/purchase-hashpower", label: "Purchase HashPower", icon: "wallet" },
   { href: "/dashboard/mining-packages", label: "Mining Packages", icon: "layers" },
   { href: "/dashboard/mining", label: "Mining Ops", icon: "gauge" },

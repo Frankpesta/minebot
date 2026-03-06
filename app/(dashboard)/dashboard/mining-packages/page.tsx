@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { PlansMarketplace } from "@/components/dashboard/plans-marketplace";
 import {
@@ -14,6 +15,9 @@ export default async function MiningPackagesPage() {
   const current = await getCurrentUser();
   if (!current) {
     return null;
+  }
+  if (current.user.kycStatus !== "approved") {
+    redirect("/dashboard/verification");
   }
 
   const convex = getConvexClient();

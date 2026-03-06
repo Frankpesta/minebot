@@ -99,6 +99,7 @@ export const createUser = mutation({
       referredBy: referredBy,
       referralBonusEarned: 0,
       totalReferrals: 0,
+      kycStatus: "none",
     });
 
     // Create referral record if referred

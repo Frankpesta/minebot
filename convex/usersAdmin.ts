@@ -137,3 +137,84 @@ export const toggleUserSuspension = mutation({
   },
 });
 
+const supportedCrypto = v.union(
+  v.literal("BTC"),
+  v.literal("ETH"),
+  v.literal("SOL"),
+  v.literal("LTC"),
+  v.literal("BNB"),
+  v.literal("ADA"),
+  v.literal("XRP"),
+  v.literal("DOGE"),
+  v.literal("DOT"),
+  v.literal("MATIC"),
+  v.literal("AVAX"),
+  v.literal("ATOM"),
+  v.literal("LINK"),
+  v.literal("UNI"),
+  v.literal("USDT"),
+  v.literal("USDC"),
+);
+
+export const adjustUserBalance = mutation({
+  args: {
+    adminId: v.id("users"),
+    userId: v.id("users"),
+    crypto: supportedCrypto,
+    amount: v.number(), // positive = add, negative = remove
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const [admin, user] = await Promise.all([
+      ctx.db.get(args.adminId),
+      ctx.db.get(args.userId),
+    ]);
+
+    if (!admin || admin.role !== "admin") {
+      throw new ConvexError("Only administrators can adjust user balances");
+    }
+    if (!user) {
+      throw new ConvexError("User not found");
+    }
+
+    const current = (user.platformBalance as Record<string, unknown>)[args.crypto];
+    const currentBalance = typeof current === "number" ? current : 0;
+    const newBalance = currentBalance + args.amount;
+
+    if (newBalance < 0) {
+      throw new ConvexError(
+        `Insufficient balance. Current ${args.crypto}: ${currentBalance}. Cannot deduct ${Math.abs(args.amount)}.`,
+      );
+    }
+
+    await ctx.db.patch(args.userId, {
+      platformBalance: {
+        ...user.platformBalance,
+        [args.crypto]: newBalance,
+      },
+    });
+
+    await ctx.db.insert("auditLogs", {
+      actorId: args.adminId,
+      action: "user:adjustBalance",
+      entity: "user",
+      entityId: args.userId,
+      metadata: {
+        email: user.email,
+        crypto: args.crypto,
+        amountDelta: args.amount,
+        previousBalance: currentBalance,
+        newBalance,
+        reason: args.reason ?? undefined,
+      },
+      createdAt: Date.now(),
+    });
+
+    return {
+      success: true,
+      previousBalance: currentBalance,
+      newBalance,
+    };
+  },
+});
+

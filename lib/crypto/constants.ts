@@ -85,3 +85,29 @@ export const MIN_WITHDRAWAL: Partial<Record<SupportedCrypto, number>> = {
   USDC: 25,
 };
 
+/**
+ * CoinGecko coin IDs, used by every price-fetching call site so there is a
+ * single mapping to keep in sync (previously duplicated in three places).
+ */
+export const COINGECKO_ID_MAP: Record<SupportedCrypto, string> = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  SOL: "solana",
+  LTC: "litecoin",
+  BNB: "binancecoin",
+  ADA: "cardano",
+  XRP: "ripple",
+  DOGE: "dogecoin",
+  DOT: "polkadot",
+  MATIC: "matic-network",
+  AVAX: "avalanche-2",
+  ATOM: "cosmos",
+  LINK: "chainlink",
+  UNI: "uniswap",
+  USDT: "tether",
+  USDC: "usd-coin",
+};
+
+/** Coins that are pegged 1:1 to USD and never need a live price lookup. */
+export const STABLECOINS: ReadonlySet<string> = new Set(["USDT", "USDC"]);
+

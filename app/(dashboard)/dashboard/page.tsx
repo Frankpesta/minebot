@@ -13,12 +13,25 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getConvexClient } from "@/lib/convex/client";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ReferralCard } from "@/components/dashboard/referral-card";
+import { BalanceRow } from "@/components/dashboard/balance-row";
 
-const currencyLabels: Record<"ETH" | "USDT" | "USDC", string> = {
-  ETH: "Ethereum",
-  USDT: "Tether",
-  USDC: "USD Coin",
-};
+function balanceRows(
+  balance: Record<string, number | Record<string, number> | undefined>,
+): Array<[string, number]> {
+  const rows: Array<[string, number]> = [];
+  for (const [key, value] of Object.entries(balance)) {
+    if (key === "others") {
+      if (value && typeof value === "object") {
+        rows.push(...(Object.entries(value) as Array<[string, number]>));
+      }
+      continue;
+    }
+    if (typeof value === "number" && value > 0) {
+      rows.push([key, value]);
+    }
+  }
+  return rows;
+}
 
 export default async function DashboardOverviewPage() {
   const current = await getCurrentUser();
@@ -37,11 +50,11 @@ export default async function DashboardOverviewPage() {
     {
       label: "Platform balance",
       value: formatCurrency(summary.metrics.platformBalance),
-      hint: "Spendable funds across ETH/USDT/USDC",
+      hint: "Spendable funds across all your deposited assets",
     },
     {
       label: "Mining earnings",
-      value: summary.metrics.miningBalance.toLocaleString(),
+      value: formatCurrency(summary.metrics.miningBalance),
       hint: "Accumulated rewards ready for payout",
     },
     {
@@ -95,19 +108,15 @@ export default async function DashboardOverviewPage() {
             <CardDescription>Spendable balance for purchases and withdrawals.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            {(Object.entries(summary.balances.platform) as Array<["ETH" | "USDT" | "USDC", number]>)
-              .filter(([, value]) => typeof value === "number")
-              .map(([currency, value]) => (
-                <div key={currency} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold uppercase tracking-wide">{currency}</p>
-                    <p className="text-xs text-muted-foreground">{currencyLabels[currency]}</p>
-                  </div>
-                  <span className="font-medium tabular-nums">{value.toLocaleString()}</span>
-                </div>
-              ))}
+            {balanceRows(summary.balances.platform).length === 0 ? (
+              <p className="text-muted-foreground">No funds yet — make a deposit to get started.</p>
+            ) : (
+              balanceRows(summary.balances.platform).map(([coin, amount]) => (
+                <BalanceRow key={coin} coin={coin} amount={amount} priceUSD={summary.prices[coin] ?? 0} />
+              ))
+            )}
             <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs uppercase tracking-wide text-muted-foreground">
-              <span>Total (USD est.)</span>
+              <span>Total (USD)</span>
               <span className="text-sm font-semibold">
                 {formatCurrency(summary.metrics.platformBalance)}
               </span>
@@ -121,36 +130,17 @@ export default async function DashboardOverviewPage() {
             <CardDescription>Realized rewards awaiting withdrawal.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">BTC</span>
-              <span className="tabular-nums">
-                {summary.balances.mining.BTC.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="font-medium">ETH</span>
-              <span className="tabular-nums">
-                {summary.balances.mining.ETH.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="font-medium">LTC</span>
-              <span className="tabular-nums">
-                {summary.balances.mining.LTC.toLocaleString()}
-              </span>
-            </div>
-            {summary.balances.mining.others
-              ? (Object.entries(summary.balances.mining.others) as [string, number][]).map(([coin, amount]) => (
-                  <div key={coin} className="flex items-center justify-between">
-                    <span className="font-medium uppercase">{coin}</span>
-                    <span className="tabular-nums">{amount.toLocaleString()}</span>
-                  </div>
-                ))
-              : null}
+            {balanceRows(summary.balances.mining).length === 0 ? (
+              <p className="text-muted-foreground">No mining earnings yet.</p>
+            ) : (
+              balanceRows(summary.balances.mining).map(([coin, amount]) => (
+                <BalanceRow key={coin} coin={coin} amount={amount} priceUSD={summary.prices[coin] ?? 0} />
+              ))
+            )}
             <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs uppercase tracking-wide text-muted-foreground">
-              <span>Total</span>
+              <span>Total (USD)</span>
               <span className="text-sm font-semibold">
-                {summary.metrics.miningBalance.toLocaleString()}
+                {formatCurrency(summary.metrics.miningBalance)}
               </span>
             </div>
           </CardContent>

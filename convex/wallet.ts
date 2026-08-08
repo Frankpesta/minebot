@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 /**
  * Get platform balance for a user
- * USD calculation is now done on the frontend using /api/crypto-prices
+ * USD calculation uses the cached price table (see convex/prices.ts)
  */
 export const getPlatformBalance = query({
   args: {
@@ -20,7 +20,7 @@ export const getPlatformBalance = query({
 
 /**
  * Get mining balance for a user
- * USD calculation is now done on the frontend using /api/crypto-prices
+ * USD calculation uses the cached price table (see convex/prices.ts)
  */
 export const getMiningBalance = query({
   args: {

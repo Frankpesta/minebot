@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import type { SupportedCrypto } from "@/lib/crypto/constants";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 type AdminDeposit = {
   _id: string;
@@ -25,7 +25,13 @@ type AdminDeposit = {
   adminNote?: string | null;
 };
 
-export function DepositReviewCard({ deposit }: { deposit: AdminDeposit }) {
+export function DepositReviewCard({
+  deposit,
+  usdEquivalent,
+}: {
+  deposit: AdminDeposit;
+  usdEquivalent?: number;
+}) {
   const router = useRouter();
   const [adminNote, setAdminNote] = useState(deposit.adminNote ?? "");
   const [txHash, setTxHash] = useState(deposit.txHash ?? "");
@@ -114,6 +120,9 @@ export function DepositReviewCard({ deposit }: { deposit: AdminDeposit }) {
           <dt className="font-semibold text-foreground">Amount</dt>
           <dd>
             {deposit.amount.toLocaleString()} {deposit.crypto}
+            {usdEquivalent !== undefined && (
+              <span className="ml-1 text-muted-foreground">(≈ {formatCurrency(usdEquivalent)})</span>
+            )}
           </dd>
         </div>
         <div>

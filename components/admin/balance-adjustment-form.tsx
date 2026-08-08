@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useQuery } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,8 @@ import { toast } from "@/components/ui/use-toast";
 import { adjustBalanceAction } from "@/app/(admin)/admin/balance/actions";
 import { SUPPORTED_CRYPTO, CRYPTO_NAMES } from "@/lib/crypto/constants";
 import type { SupportedCrypto } from "@/lib/crypto/constants";
+import { api } from "@/convex/_generated/api";
+import { formatCurrency } from "@/lib/utils";
 
 type UserOption = { _id: string; email: string };
 
@@ -23,12 +26,22 @@ type Props = {
   users: UserOption[];
 };
 
+type BalanceType = "platform" | "mining";
+
 export function BalanceAdjustmentForm({ users }: Props) {
   const [userId, setUserId] = useState("");
+  const [balanceType, setBalanceType] = useState<BalanceType>("platform");
   const [crypto, setCrypto] = useState<SupportedCrypto>("USDT");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const prices = useQuery(api.prices.getPrices, {});
+  const amountNumber = Number(amount);
+  const usdEquivalent =
+    prices && !Number.isNaN(amountNumber) && amountNumber !== 0
+      ? amountNumber * (prices[crypto] ?? 0)
+      : null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +57,7 @@ export function BalanceAdjustmentForm({ users }: Props) {
     startTransition(async () => {
       const result = await adjustBalanceAction({
         userId,
+        balanceType,
         crypto,
         amount: num,
         reason: reason.trim() || undefined,
@@ -79,6 +93,22 @@ export function BalanceAdjustmentForm({ users }: Props) {
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="balanceType">Balance type</Label>
+        <Select
+          value={balanceType}
+          onValueChange={(v) => setBalanceType(v as BalanceType)}
+        >
+          <SelectTrigger id="balanceType">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="platform">Platform balance</SelectItem>
+            <SelectItem value="mining">Mining balance</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="crypto">Asset</Label>
         <Select
           value={crypto}
@@ -90,7 +120,7 @@ export function BalanceAdjustmentForm({ users }: Props) {
           <SelectContent>
             {SUPPORTED_CRYPTO.map((c) => (
               <SelectItem key={c} value={c}>
-                {c} – {CRYPTO_NAMES[c]}
+                {c === "USDT" ? "USDT – Tether (≈ USD)" : `${c} – ${CRYPTO_NAMES[c]}`}
               </SelectItem>
             ))}
           </SelectContent>
@@ -108,6 +138,11 @@ export function BalanceAdjustmentForm({ users }: Props) {
           onChange={(e) => setAmount(e.target.value)}
           required
         />
+        {usdEquivalent !== null && (
+          <p className="text-xs text-muted-foreground">
+            ≈ {formatCurrency(Math.abs(usdEquivalent))} {usdEquivalent < 0 ? "removed" : "added"}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">

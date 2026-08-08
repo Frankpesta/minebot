@@ -10,16 +10,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getConvexClient } from "@/lib/convex/client";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { calculateBalanceUSD } from "@/lib/crypto/valuation";
 
 export default async function AdminWithdrawalsPage() {
   const convex = getConvexClient();
-  const [pendingWithdrawals, approvedWithdrawals, recentWithdrawals, hotWallets] =
+  const [pendingWithdrawals, approvedWithdrawals, recentWithdrawals, hotWallets, prices] =
     await Promise.all([
       convex.query(api.withdrawals.listAdminWithdrawals, { status: "pending", limit: 50 }),
       convex.query(api.withdrawals.listAdminWithdrawals, { status: "approved", limit: 50 }),
       convex.query(api.withdrawals.listAdminWithdrawals, { limit: 40 }),
       convex.query(api.hotWallets.listHotWallets, {}),
+      convex.query(api.prices.getPrices, {}),
     ]);
 
   // Create a map of crypto to hot wallet address
@@ -74,6 +76,7 @@ export default async function AdminWithdrawalsPage() {
                   userNote: withdrawal.userNote,
                 }}
                 hotWalletAddress={hotWalletMap.get(withdrawal.crypto)}
+                usdEquivalent={calculateBalanceUSD({ [withdrawal.crypto]: withdrawal.amount }, prices)}
               />
             ))
           )}
@@ -95,7 +98,10 @@ export default async function AdminWithdrawalsPage() {
                   <div>
                     <p className="font-semibold">
                       {withdrawal.userEmail ?? "Unknown user"} •{" "}
-                      {withdrawal.finalAmount.toFixed(6)} {withdrawal.crypto}
+                      {withdrawal.finalAmount.toFixed(6)} {withdrawal.crypto}{" "}
+                      <span className="font-normal text-muted-foreground">
+                        (≈ {formatCurrency(calculateBalanceUSD({ [withdrawal.crypto]: withdrawal.finalAmount }, prices))})
+                      </span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(withdrawal.createdAt)} • Destination {withdrawal.destinationAddress}

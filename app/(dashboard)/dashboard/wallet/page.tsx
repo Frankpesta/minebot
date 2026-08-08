@@ -8,7 +8,28 @@ import {
 } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth/session";
 import { formatCurrency } from "@/lib/utils";
-import { getCryptoPrices, calculateBalanceUSD } from "@/lib/crypto-prices";
+import { getConvexClient } from "@/lib/convex/client";
+import { api } from "@/convex/_generated/api";
+import { calculateBalanceUSD } from "@/lib/crypto/valuation";
+import { BalanceRow } from "@/components/dashboard/balance-row";
+
+function balanceRows(
+  balance: Record<string, number | Record<string, number> | undefined>,
+): Array<[string, number]> {
+  const rows: Array<[string, number]> = [];
+  for (const [key, value] of Object.entries(balance)) {
+    if (key === "others") {
+      if (value && typeof value === "object") {
+        rows.push(...(Object.entries(value) as Array<[string, number]>));
+      }
+      continue;
+    }
+    if (typeof value === "number" && value > 0) {
+      rows.push([key, value]);
+    }
+  }
+  return rows;
+}
 
 export default async function WalletPage() {
   const current = await getCurrentUser();
@@ -20,43 +41,14 @@ export default async function WalletPage() {
   }
   const user = current.user;
 
-  // Collect all coins from balances
-  const platformCoins: string[] = [];
-  const miningCoins: string[] = [];
+  const convex = getConvexClient();
+  const prices = await convex.query(api.prices.getPrices, {});
 
-  if (user?.platformBalance) {
-    for (const [key, value] of Object.entries(user.platformBalance)) {
-      if (key !== "others" && typeof value === "number" && value > 0) {
-        platformCoins.push(key);
-      }
-      if (key === "others" && value && typeof value === "object") {
-        platformCoins.push(...Object.keys(value));
-      }
-    }
-  }
+  const platformRows = balanceRows(user.platformBalance);
+  const miningRows = balanceRows(user.miningBalance);
 
-  if (user?.miningBalance) {
-    for (const [key, value] of Object.entries(user.miningBalance)) {
-      if (key !== "others" && typeof value === "number" && value > 0) {
-        miningCoins.push(key);
-      }
-      if (key === "others" && value && typeof value === "object") {
-        miningCoins.push(...Object.keys(value));
-      }
-    }
-  }
-
-  // Fetch prices for all coins
-  const allCoins = [...new Set([...platformCoins, ...miningCoins])];
-  const prices = allCoins.length > 0 ? await getCryptoPrices(allCoins) : {};
-
-  // Calculate USD values
-  const platformBalanceUSD = user?.platformBalance
-    ? calculateBalanceUSD(user.platformBalance, prices)
-    : 0;
-  const miningBalanceUSD = user?.miningBalance
-    ? calculateBalanceUSD(user.miningBalance, prices)
-    : 0;
+  const platformBalanceUSD = calculateBalanceUSD(user.platformBalance, prices);
+  const miningBalanceUSD = calculateBalanceUSD(user.miningBalance, prices);
 
   return (
     <div className="space-y-6">
@@ -74,22 +66,12 @@ export default async function WalletPage() {
             <CardDescription>Spendable balance for purchases and withdrawals.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            {/* Display all coins in platform balance */}
-            {user?.platformBalance && (
-              <>
-                {Object.entries(user.platformBalance)
-                  .filter(([key, value]: [string, unknown]) => {
-                    if (key === "others") return false;
-                    return typeof value === "number" && value > 0;
-                  })
-                  .map(([coin, value]: [string, unknown]) => (
-                    <BalanceRow key={coin} label={coin} value={value as number} />
-                  ))}
-                {user.platformBalance.others &&
-                  (Object.entries(user.platformBalance.others) as [string, number][]).map(([coin, value]) => (
-                    <BalanceRow key={coin} label={coin} value={value} />
-                  ))}
-              </>
+            {platformRows.length === 0 ? (
+              <p className="text-muted-foreground">No funds yet — make a deposit to get started.</p>
+            ) : (
+              platformRows.map(([coin, value]) => (
+                <BalanceRow key={coin} coin={coin} amount={value} priceUSD={prices[coin] ?? 0} />
+              ))
             )}
             <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs uppercase tracking-wide text-muted-foreground">
               <span>Total (USD)</span>
@@ -104,23 +86,12 @@ export default async function WalletPage() {
             <CardDescription>Realized rewards awaiting withdrawal.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            {/* Display all coins in mining balance */}
-            {user?.miningBalance && (
-              <>
-                {Object.entries(user.miningBalance as Record<string, number | Record<string, number> | undefined>)
-                  .filter(([key, value]: [string, unknown]) => {
-                    if (key === "others") return false;
-                    return typeof value === "number" && value > 0;
-                  })
-                  .map(([coin, value]: [string, unknown]) => (
-                    <BalanceRow key={coin} label={coin} value={value as number} />
-                  ))}
-                {user.miningBalance.others
-                  ? (Object.entries(user.miningBalance.others) as [string, number][]).map(([coin, value]) => (
-                      <BalanceRow key={coin} label={coin} value={value} />
-                    ))
-                  : null}
-              </>
+            {miningRows.length === 0 ? (
+              <p className="text-muted-foreground">No mining earnings yet.</p>
+            ) : (
+              miningRows.map(([coin, value]) => (
+                <BalanceRow key={coin} coin={coin} amount={value} priceUSD={prices[coin] ?? 0} />
+              ))
             )}
             <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs uppercase tracking-wide text-muted-foreground">
               <span>Total (USD)</span>
@@ -132,13 +103,3 @@ export default async function WalletPage() {
     </div>
   );
 }
-
-function BalanceRow({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="font-medium">{label}</span>
-      <span className="tabular-nums">{value.toLocaleString()}</span>
-    </div>
-  );
-}
-

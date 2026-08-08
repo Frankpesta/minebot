@@ -321,6 +321,12 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_unread", ["userId", "isRead"]),
 
+  cryptoPrices: defineTable({
+    symbol: v.string(),
+    usdPrice: v.number(),
+    updatedAt: v.number(),
+  }).index("by_symbol", ["symbol"]),
+
   kycSubmissions: defineTable({
     userId: v.id("users"),
     documentType: v.union(v.literal("national_id"), v.literal("drivers_license")),

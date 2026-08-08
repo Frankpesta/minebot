@@ -10,13 +10,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getConvexClient } from "@/lib/convex/client";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { calculateBalanceUSD } from "@/lib/crypto/valuation";
 
 export default async function AdminDepositsPage() {
   const convex = getConvexClient();
-  const [pendingDeposits, recentDeposits] = await Promise.all([
+  const [pendingDeposits, recentDeposits, prices] = await Promise.all([
     convex.query(api.deposits.listAdminDeposits, { status: "pending", limit: 50 }),
     convex.query(api.deposits.listAdminDeposits, { limit: 30 }),
+    convex.query(api.prices.getPrices, {}),
   ]);
 
   const history = recentDeposits.filter((deposit: Doc<"deposits"> & { userEmail: string | null }) => deposit.status !== "pending").slice(0, 20);
@@ -54,6 +56,7 @@ export default async function AdminDepositsPage() {
                   txHash: deposit.txHash,
                   adminNote: deposit.adminNote,
                 }}
+                usdEquivalent={calculateBalanceUSD({ [deposit.crypto]: deposit.amount }, prices)}
               />
             ))
           )}
@@ -77,7 +80,10 @@ export default async function AdminDepositsPage() {
                   <div>
                     <p className="font-semibold">
                       {deposit.userEmail ?? "Unknown user"} •{" "}
-                      {deposit.amount.toLocaleString()} {deposit.crypto}
+                      {deposit.amount.toLocaleString()} {deposit.crypto}{" "}
+                      <span className="font-normal text-muted-foreground">
+                        (≈ {formatCurrency(calculateBalanceUSD({ [deposit.crypto]: deposit.amount }, prices))})
+                      </span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDate(deposit.createdAt)}

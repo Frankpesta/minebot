@@ -4,25 +4,8 @@ import type { FunctionReturnType } from "convex/server";
 import { query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { api } from "./_generated/api";
-
-const sumPlatformBalance = (balance: { ETH: number; USDT: number; USDC: number }) =>
-  (balance.ETH ?? 0) + (balance.USDT ?? 0) + (balance.USDC ?? 0);
-
-const sumMiningBalance = (miningBalance: {
-  BTC: number;
-  ETH: number;
-  LTC: number;
-  others?: Record<string, number> | undefined;
-}) => {
-  const coreTotal = (miningBalance.BTC ?? 0) + (miningBalance.ETH ?? 0) + (miningBalance.LTC ?? 0);
-  if (!miningBalance.others) {
-    return coreTotal;
-  }
-  return (
-    coreTotal +
-    Object.values(miningBalance.others).reduce((accumulator, value) => accumulator + value, 0)
-  );
-};
+import { getPriceMap } from "./prices";
+import { calculateBalanceUSD } from "../lib/crypto/valuation";
 
 export const getUserDashboardSummary = query({
   args: { userId: v.id("users") },
@@ -31,6 +14,8 @@ export const getUserDashboardSummary = query({
     if (!user) {
       throw new ConvexError("User not found");
     }
+
+    const prices = await getPriceMap(ctx);
 
     const miningOperations = await ctx.db
       .query("miningOperations")
@@ -59,8 +44,8 @@ export const getUserDashboardSummary = query({
       (withdrawal) => withdrawal.status === "pending",
     ).length;
 
-    const totalPlatformBalance = sumPlatformBalance(user.platformBalance);
-    const totalMiningBalance = sumMiningBalance(user.miningBalance);
+    const totalPlatformBalance = calculateBalanceUSD(user.platformBalance, prices);
+    const totalMiningBalance = calculateBalanceUSD(user.miningBalance, prices);
 
     // Get referral stats
     const referrals = await ctx.db
@@ -91,6 +76,7 @@ export const getUserDashboardSummary = query({
         platform: user.platformBalance,
         mining: user.miningBalance,
       },
+      prices,
       referral: {
         referralCode: user.referralCode || "",
         totalReferrals,
@@ -112,14 +98,15 @@ export const getAdminDashboardSummary = query({
     const deposits = await ctx.db.query("deposits").collect();
     const withdrawals = await ctx.db.query("withdrawals").collect();
     const referrals = await ctx.db.query("referrals").collect();
+    const prices = await getPriceMap(ctx);
 
     const totalPlatformBalance = users.reduce(
-      (accumulator, user) => accumulator + sumPlatformBalance(user.platformBalance),
+      (accumulator, user) => accumulator + calculateBalanceUSD(user.platformBalance, prices),
       0,
     );
 
     const totalMiningBalance = users.reduce(
-      (accumulator, user) => accumulator + sumMiningBalance(user.miningBalance),
+      (accumulator, user) => accumulator + calculateBalanceUSD(user.miningBalance, prices),
       0,
     );
 
@@ -176,10 +163,10 @@ export const getAdminDashboardSummary = query({
       const dateEnd = dateStart + 24 * 60 * 60 * 1000;
       const depositAmount = deposits
         .filter((d) => d.createdAt >= dateStart && d.createdAt < dateEnd && d.status === "approved")
-        .reduce((sum, d) => sum + d.amount, 0);
+        .reduce((sum, d) => sum + calculateBalanceUSD({ [d.crypto]: d.amount }, prices), 0);
       const withdrawalAmount = withdrawals
         .filter((w) => w.createdAt >= dateStart && w.createdAt < dateEnd && w.status === "completed")
-        .reduce((sum, w) => sum + w.amount, 0);
+        .reduce((sum, w) => sum + calculateBalanceUSD({ [w.crypto]: w.amount }, prices), 0);
       const dateLabel = new Date(dateStart).toLocaleDateString("en-US", { month: "short", day: "numeric" });
       depositTrends.push({ date: dateLabel, amount: depositAmount });
       withdrawalTrends.push({ date: dateLabel, amount: withdrawalAmount });

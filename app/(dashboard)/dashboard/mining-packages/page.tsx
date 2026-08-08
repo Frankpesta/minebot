@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getConvexClient } from "@/lib/convex/client";
+import { formatCurrency } from "@/lib/utils";
 
 export default async function MiningPackagesPage() {
   const current = await getCurrentUser();
@@ -21,12 +22,16 @@ export default async function MiningPackagesPage() {
   }
 
   const convex = getConvexClient();
-  const plans = await convex.query(api.plans.listPlans, { activeOnly: true });
+  const [plans, summary] = await Promise.all([
+    convex.query(api.plans.listPlans, { activeOnly: true }),
+    convex.query(api.dashboard.getUserDashboardSummary, { userId: current.user._id }),
+  ]);
 
-  const totalBalance =
-    current.user.platformBalance.ETH +
-    current.user.platformBalance.USDT +
-    current.user.platformBalance.USDC;
+  const totalBalance = summary.metrics.platformBalance;
+
+  const heldCoins = Object.entries(summary.balances.platform)
+    .filter(([key, value]) => key !== "others" && typeof value === "number" && value > 0)
+    .map(([coin, value]) => `${coin}: ${(value as number).toFixed(4)}`);
 
   return (
     <div className="space-y-6">
@@ -45,14 +50,12 @@ export default async function MiningPackagesPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline">
-            <span className="text-2xl font-bold sm:text-3xl">
-              ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-            <span className="text-xs text-muted-foreground sm:text-sm">
-              (ETH: {current.user.platformBalance.ETH.toFixed(4)}, USDT:{" "}
-              {current.user.platformBalance.USDT.toFixed(2)}, USDC:{" "}
-              {current.user.platformBalance.USDC.toFixed(2)})
-            </span>
+            <span className="text-2xl font-bold sm:text-3xl">{formatCurrency(totalBalance)}</span>
+            {heldCoins.length > 0 && (
+              <span className="text-xs text-muted-foreground sm:text-sm">
+                ({heldCoins.join(", ")})
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>

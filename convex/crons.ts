@@ -1,7 +1,7 @@
 import { internalMutation, internalAction } from "./_generated/server";
 import { cronJobs } from "convex/server";
-import { internal, api } from "./_generated/api";
-import { v } from "convex/values";
+import { internal } from "./_generated/api";
+import { getPriceMap } from "./prices";
 
 /**
  * Helper function to get start of day timestamp (UTC)
@@ -21,11 +21,9 @@ function getStartOfDayUTC(timestamp: number): number {
  * The cron job fetches prices for BTC and ETH daily and updates mining balances accordingly.
  */
 export const processMiningOperationsMutation = internalMutation({
-  args: {
-    prices: v.optional(v.record(v.string(), v.number())),
-  },
-  handler: async (ctx, args) => {
-    const prices = args.prices ?? {};
+  args: {},
+  handler: async (ctx) => {
+    const prices = await getPriceMap(ctx);
     const now = Date.now();
     const todayStart = getStartOfDayUTC(now);
     
@@ -222,102 +220,25 @@ type ProcessMiningResult = {
 };
 
 /**
- * Fallback prices to use when API fails (updated periodically)
- * These are reasonable defaults - the actual profit is based on ROI percentage
- * so the exact price mainly affects the coin amount received, not the USD value
- */
-const FALLBACK_PRICES: Record<string, number> = {
-  BTC: 95000, // ~$95,000 USD per BTC (as of early 2025)
-  ETH: 3300,  // ~$3,300 USD per ETH (as of early 2025)
-};
-
-/**
- * Fetch prices with retry logic and exponential backoff
- */
-async function fetchPricesWithRetry(maxRetries = 3): Promise<Record<string, number>> {
-  const prices: Record<string, number> = {};
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      // Fetch both BTC and ETH in a single request to reduce API calls
-      const response = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd",
-        {
-          headers: {
-            Accept: "application/json",
-            "User-Agent": "MiningPlatform/1.0",
-          },
-        }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.bitcoin?.usd) {
-          prices["BTC"] = data.bitcoin.usd;
-        }
-        if (data.ethereum?.usd) {
-          prices["ETH"] = data.ethereum.usd;
-        }
-        
-        if (prices["BTC"] && prices["ETH"]) {
-          console.log(`[processMiningOperations] Fetched prices: BTC=$${prices["BTC"]}, ETH=$${prices["ETH"]}`);
-          return prices;
-        }
-      } else if (response.status === 429) {
-        // Rate limited - wait longer before retry
-        const waitTime = Math.pow(2, attempt) * 2000; // 4s, 8s, 16s
-        console.warn(`[processMiningOperations] Rate limited (429), waiting ${waitTime}ms before retry ${attempt}/${maxRetries}`);
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-        continue;
-      } else {
-        console.warn(`[processMiningOperations] API returned ${response.status}, attempt ${attempt}/${maxRetries}`);
-      }
-    } catch (error) {
-      console.warn(`[processMiningOperations] Fetch error on attempt ${attempt}/${maxRetries}:`, error);
-    }
-    
-    // Wait before retry with exponential backoff
-    if (attempt < maxRetries) {
-      const waitTime = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-    }
-  }
-  
-  return prices;
-}
-
-/**
- * Internal action to process mining operations
- * Fetches BTC and ETH prices from CoinGecko and processes daily mining earnings
- * Uses fallback prices if API is unavailable to ensure payouts continue
+ * Internal action wrapper so the HTTP trigger (convex/http.ts) and cron
+ * scheduler can invoke mining processing. Prices now come from the shared
+ * `cryptoPrices` cache (kept warm by `prices.refreshPrices`) instead of a
+ * bespoke fetch here.
  */
 const processMiningOperationsActionImpl = internalAction({
   args: {},
   handler: async (ctx): Promise<ProcessMiningResult> => {
     console.log(`[processMiningOperations] Starting daily mining operations processing...`);
-    
-    // Fetch prices with retry logic
-    let prices = await fetchPricesWithRetry(3);
-    
-    // If we couldn't fetch prices, use fallback prices
-    // This ensures payouts continue even if the API is down
-    let usedFallback = false;
-    if (!prices["BTC"] || !prices["ETH"]) {
-      console.warn(`[processMiningOperations] Using fallback prices due to API issues`);
-      prices = { ...FALLBACK_PRICES, ...prices };
-      usedFallback = true;
-      console.log(`[processMiningOperations] Fallback prices: BTC=$${prices["BTC"]}, ETH=$${prices["ETH"]}`);
-    }
-    
-    // Call the mutation with fetched or fallback prices
-    const result = await ctx.runMutation(internal.crons.processMiningOperationsMutation, {
-      prices,
-    }) as ProcessMiningResult;
-    
+
+    const result = (await ctx.runMutation(
+      internal.crons.processMiningOperationsMutation,
+      {},
+    )) as ProcessMiningResult;
+
     console.log(
-      `[processMiningOperations] Completed. Processed: ${result.processed}, Completed: ${result.completed}, Payouts: ${result.payoutsDistributed}${usedFallback ? ' (used fallback prices)' : ''}`
+      `[processMiningOperations] Completed. Processed: ${result.processed}, Completed: ${result.completed}, Payouts: ${result.payoutsDistributed}`,
     );
-    
+
     return result;
   },
 });
@@ -345,6 +266,18 @@ crons.daily(
     minuteUTC: 0,
   },
   internal.crons.processMiningOperationsAction,
+);
+
+// Keep the shared crypto price cache warm so balance/earning USD values
+// (dashboard, purchases, mining payouts, admin) stay accurate. Runs shortly
+// before the midnight mining payout job so that job reads fresh prices.
+crons.daily(
+  "refreshCryptoPrices",
+  {
+    hourUTC: 23,
+    minuteUTC: 55,
+  },
+  internal.prices.refreshPrices,
 );
 
 export default crons;

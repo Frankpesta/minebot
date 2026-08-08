@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 type AdminWithdrawal = {
   _id: string;
@@ -30,9 +30,10 @@ type AdminWithdrawal = {
 type WithdrawReviewCardProps = {
   withdrawal: AdminWithdrawal;
   hotWalletAddress?: string;
+  usdEquivalent?: number;
 };
 
-export function WithdrawReviewCard({ withdrawal, hotWalletAddress }: WithdrawReviewCardProps) {
+export function WithdrawReviewCard({ withdrawal, hotWalletAddress, usdEquivalent }: WithdrawReviewCardProps) {
   const router = useRouter();
   const [adminNote, setAdminNote] = useState(withdrawal.adminNote ?? "");
   const [txHash, setTxHash] = useState(withdrawal.txHash ?? "");
@@ -107,6 +108,9 @@ export function WithdrawReviewCard({ withdrawal, hotWalletAddress }: WithdrawRev
           <dt className="font-semibold text-foreground">Requested amount</dt>
           <dd>
             {withdrawal.amount.toLocaleString()} {withdrawal.crypto}
+            {usdEquivalent !== undefined && (
+              <span className="ml-1 text-muted-foreground">(≈ {formatCurrency(usdEquivalent)})</span>
+            )}
           </dd>
         </div>
         <div>

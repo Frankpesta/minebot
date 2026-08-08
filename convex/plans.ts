@@ -2,6 +2,8 @@ import { ConvexError, v } from "convex/values";
 
 import { mutation, query, internalQuery } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { getPriceMap } from "./prices";
+import { calculateBalanceUSD, deductUsdFromBalance, PLATFORM_BALANCE_FIELDS } from "../lib/crypto/valuation";
 
 export const listPlans = query({
   args: {
@@ -182,20 +184,20 @@ export const purchasePlan = mutation({
       throw new ConvexError(`Coin ${args.coin} is not supported by this plan`);
     }
 
-    const totalBalance =
-      user.platformBalance.ETH + user.platformBalance.USDT + user.platformBalance.USDC;
+    const prices = await getPriceMap(ctx);
+    const totalBalanceUSD = calculateBalanceUSD(user.platformBalance, prices);
 
     // Use minPriceUSD as minimum, or priceUSD if minPriceUSD doesn't exist (backward compatibility)
     const minPrice = plan.minPriceUSD ?? plan.priceUSD;
-    if (totalBalance < minPrice) {
+    if (totalBalanceUSD < minPrice) {
       throw new ConvexError(`Insufficient platform balance. Minimum required: $${minPrice.toFixed(2)}`);
     }
 
     // Determine purchase amount
     // If maxPriceUSD is set and user has more than max, use max
     // Otherwise, use the user's total balance (as long as it's >= min)
-    let purchaseAmount = totalBalance;
-    if (plan.maxPriceUSD !== undefined && totalBalance > plan.maxPriceUSD) {
+    let purchaseAmount = totalBalanceUSD;
+    if (plan.maxPriceUSD !== undefined && totalBalanceUSD > plan.maxPriceUSD) {
       purchaseAmount = plan.maxPriceUSD;
     }
 
@@ -231,37 +233,19 @@ export const purchasePlan = mutation({
       createdAt: now,
     });
 
-    let remainingCost = purchaseAmount;
-    const balanceUpdates: Partial<typeof user.platformBalance> = {};
+    const { balance: updatedBalance, shortfallUSD } = deductUsdFromBalance(
+      user.platformBalance,
+      purchaseAmount,
+      prices,
+      PLATFORM_BALANCE_FIELDS,
+    );
 
-    if (user.platformBalance.USDC >= remainingCost) {
-      balanceUpdates.USDC = user.platformBalance.USDC - remainingCost;
-      remainingCost = 0;
-    } else {
-      balanceUpdates.USDC = 0;
-      remainingCost -= user.platformBalance.USDC;
-    }
-
-    if (remainingCost > 0 && user.platformBalance.USDT >= remainingCost) {
-      balanceUpdates.USDT = user.platformBalance.USDT - remainingCost;
-      remainingCost = 0;
-    } else if (remainingCost > 0) {
-      balanceUpdates.USDT = 0;
-      remainingCost -= user.platformBalance.USDT;
-    }
-
-    if (remainingCost > 0 && user.platformBalance.ETH >= remainingCost) {
-      balanceUpdates.ETH = user.platformBalance.ETH - remainingCost;
-    } else if (remainingCost > 0) {
+    if (shortfallUSD > 0.01) {
       throw new ConvexError("Insufficient platform balance");
     }
 
     await ctx.db.patch(args.userId, {
-      platformBalance: {
-        ETH: balanceUpdates.ETH ?? user.platformBalance.ETH,
-        USDT: balanceUpdates.USDT ?? user.platformBalance.USDT,
-        USDC: balanceUpdates.USDC ?? user.platformBalance.USDC,
-      },
+      platformBalance: updatedBalance as typeof user.platformBalance,
     });
 
     await ctx.db.insert("auditLogs", {

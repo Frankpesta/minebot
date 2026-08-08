@@ -9,6 +9,7 @@ import type { SupportedCrypto } from "@/lib/crypto/constants";
 
 export async function adjustBalanceAction(params: {
   userId: string;
+  balanceType: "platform" | "mining";
   crypto: SupportedCrypto;
   amount: number;
   reason?: string;
@@ -25,6 +26,7 @@ export async function adjustBalanceAction(params: {
     const result = await convex.mutation(api.usersAdmin.adjustUserBalance, {
       adminId: current.user._id,
       userId: params.userId as Id<"users">,
+      balanceType: params.balanceType,
       crypto: params.crypto,
       amount: params.amount,
       reason: params.reason,

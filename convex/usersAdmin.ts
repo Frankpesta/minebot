@@ -2,6 +2,12 @@ import { ConvexError, v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import {
+  getBalanceAmount,
+  setBalanceAmount,
+  PLATFORM_BALANCE_FIELDS,
+  MINING_BALANCE_FIELDS,
+} from "../lib/crypto/valuation";
 
 export const listAllUsers = query({
   args: {
@@ -160,6 +166,7 @@ export const adjustUserBalance = mutation({
   args: {
     adminId: v.id("users"),
     userId: v.id("users"),
+    balanceType: v.union(v.literal("platform"), v.literal("mining")),
     crypto: supportedCrypto,
     amount: v.number(), // positive = add, negative = remove
     reason: v.optional(v.string()),
@@ -177,8 +184,10 @@ export const adjustUserBalance = mutation({
       throw new ConvexError("User not found");
     }
 
-    const current = (user.platformBalance as Record<string, unknown>)[args.crypto];
-    const currentBalance = typeof current === "number" ? current : 0;
+    const targetBalance = args.balanceType === "mining" ? user.miningBalance : user.platformBalance;
+    const knownFields = args.balanceType === "mining" ? MINING_BALANCE_FIELDS : PLATFORM_BALANCE_FIELDS;
+
+    const currentBalance = getBalanceAmount(targetBalance, args.crypto);
     const newBalance = currentBalance + args.amount;
 
     if (newBalance < 0) {
@@ -187,12 +196,14 @@ export const adjustUserBalance = mutation({
       );
     }
 
-    await ctx.db.patch(args.userId, {
-      platformBalance: {
-        ...user.platformBalance,
-        [args.crypto]: newBalance,
-      },
-    });
+    const updatedBalance = setBalanceAmount(targetBalance, args.crypto, newBalance, knownFields);
+
+    await ctx.db.patch(
+      args.userId,
+      args.balanceType === "mining"
+        ? { miningBalance: updatedBalance as typeof user.miningBalance }
+        : { platformBalance: updatedBalance as typeof user.platformBalance },
+    );
 
     await ctx.db.insert("auditLogs", {
       actorId: args.adminId,
@@ -201,6 +212,7 @@ export const adjustUserBalance = mutation({
       entityId: args.userId,
       metadata: {
         email: user.email,
+        balanceType: args.balanceType,
         crypto: args.crypto,
         amountDelta: args.amount,
         previousBalance: currentBalance,

@@ -16,9 +16,7 @@ type CreatePlanInput = {
   maxPriceUSD?: number;
   priceUSD: number;
   supportedCoins: string;
-  minDailyROI: number;
-  maxDailyROI: number;
-  estimatedDailyEarning: number;
+  dailyROI: number;
   isActive: boolean;
   features: string;
   idealFor?: string;
@@ -51,9 +49,7 @@ export async function createPlan(input: CreatePlanInput) {
     maxPriceUSD: input.maxPriceUSD,
     priceUSD: input.priceUSD,
     supportedCoins,
-    minDailyROI: input.minDailyROI,
-    maxDailyROI: input.maxDailyROI,
-    estimatedDailyEarning: input.estimatedDailyEarning,
+    dailyROI: input.dailyROI,
     isActive: input.isActive,
     features,
     idealFor: input.idealFor,
@@ -86,9 +82,7 @@ export async function updatePlan(input: UpdatePlanInput) {
     maxPriceUSD: input.maxPriceUSD,
     priceUSD: input.priceUSD,
     supportedCoins,
-    minDailyROI: input.minDailyROI,
-    maxDailyROI: input.maxDailyROI,
-    estimatedDailyEarning: input.estimatedDailyEarning,
+    dailyROI: input.dailyROI,
     isActive: input.isActive,
     features,
     idealFor: input.idealFor,

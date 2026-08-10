@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
-import { useEffect, useMemo, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useQuery } from "convex/react";
 
 import { submitWithdrawalRequest } from "@/app/(dashboard)/dashboard/withdraw/actions";
 import {
@@ -11,6 +12,7 @@ import {
   type WithdrawalRequestInput,
   type WithdrawalRequestValues,
 } from "@/app/(dashboard)/dashboard/withdraw/validators";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -27,6 +29,7 @@ import { toast } from "@/components/ui/use-toast";
 import { getWithdrawalFee } from "@/lib/payments/fees";
 import type { SupportedCrypto } from "@/lib/crypto/constants";
 import { MIN_WITHDRAWAL } from "@/lib/crypto/constants";
+import { formatCurrency } from "@/lib/utils";
 
 type WithdrawFormProps = {
   balances: Record<string, number>;
@@ -34,10 +37,13 @@ type WithdrawFormProps = {
 
 export function WithdrawForm({ balances }: WithdrawFormProps) {
   const [isSubmitting, startSubmit] = useTransition();
+  const [usdAmount, setUsdAmount] = useState("");
   const availableCryptos = (Object.entries(balances) as Array<[SupportedCrypto, number]>)
     .filter(([, value]) => value > 0)
     .map(([asset]) => asset);
   const defaultCrypto = availableCryptos[0] ?? "USDT";
+
+  const prices = useQuery(api.prices.getPrices, {});
 
   const form = useForm<WithdrawalRequestInput>({
     resolver: zodResolver(withdrawalRequestSchema),
@@ -51,18 +57,33 @@ export function WithdrawForm({ balances }: WithdrawFormProps) {
   });
 
   const crypto = form.watch("crypto") as SupportedCrypto;
-  const rawAmount = form.watch("amount");
-  const amount = Number(rawAmount) || 0;
+  const price = prices?.[crypto] ?? 0;
+  const usdNumber = Number(usdAmount) || 0;
+  const cryptoAmount = price > 0 ? usdNumber / price : 0;
   const available = balances[crypto] ?? 0;
-  const networkFee = useMemo(() => getWithdrawalFee(crypto, amount), [crypto, amount]);
-  const finalAmount = amount > networkFee ? amount - networkFee : 0;
+  const availableUSD = available * price;
+  const networkFee = useMemo(() => getWithdrawalFee(crypto, cryptoAmount), [crypto, cryptoAmount]);
+  const finalAmount = cryptoAmount > networkFee ? cryptoAmount - networkFee : 0;
   const minimum = MIN_WITHDRAWAL[crypto] ?? 0;
+  const minimumUSD = minimum * price;
 
   useEffect(() => {
+    form.setValue("amount", cryptoAmount);
     form.setValue("requestedFee", networkFee);
-  }, [form, networkFee]);
+  }, [form, cryptoAmount, networkFee]);
+
+  // Reset the USD input when the selected asset changes so amounts aren't
+  // silently re-interpreted against a different price.
+  useEffect(() => {
+    setUsdAmount("");
+  }, [crypto]);
 
   async function handleSubmit(rawValues: WithdrawalRequestInput) {
+    if (!price) {
+      toast.error("Live pricing isn't available yet. Please try again shortly.");
+      return;
+    }
+
     const parsed = withdrawalRequestSchema.safeParse(rawValues);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid withdrawal request.");
@@ -71,16 +92,21 @@ export function WithdrawForm({ balances }: WithdrawFormProps) {
 
     const values: WithdrawalRequestValues = {
       ...parsed.data,
+      amount: cryptoAmount,
       requestedFee: networkFee,
     };
 
     if (values.amount < minimum) {
-      toast.error(`Minimum withdrawal for ${values.crypto} is ${minimum}.`);
+      toast.error(
+        `Minimum withdrawal for ${values.crypto} is ${minimum} (${formatCurrency(minimumUSD)}).`,
+      );
       return;
     }
 
     if (values.amount > available) {
-      toast.error(`Insufficient ${values.crypto} balance. Available: ${available}.`);
+      toast.error(
+        `Insufficient ${values.crypto} balance. Available: ${formatCurrency(availableUSD)}.`,
+      );
       return;
     }
 
@@ -90,6 +116,7 @@ export function WithdrawForm({ balances }: WithdrawFormProps) {
         toast.success(
           `Withdrawal submitted. Estimated network fee ${response.fee} ${values.crypto}.`,
         );
+        setUsdAmount("");
         form.reset({
           crypto: values.crypto,
           amount: "",
@@ -133,43 +160,33 @@ export function WithdrawForm({ balances }: WithdrawFormProps) {
                 </select>
               </FormControl>
               <FormDescription>
-                Minimum withdrawal: {minimum} {crypto}
+                Minimum withdrawal: {formatCurrency(minimumUSD)} ({minimum} {crypto})
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => {
-            const stringValue: string = typeof field.value === "string" ? field.value : (field.value?.toString() ?? "");
-            return (
-              <FormItem>
-                <FormLabel>Amount</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="any"
-                    min={minimum}
-                    max={available}
-                    placeholder={`Enter amount in ${crypto}`}
-                    value={stringValue}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value)}
-                    onBlur={field.onBlur}
-                    name={field.name}
-                    ref={field.ref}
-                  />
-              </FormControl>
-              <FormDescription>
-                Available: {available.toLocaleString()} {crypto}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-            );
-          }}
-        />
+        <FormItem>
+          <FormLabel>Amount (USD)</FormLabel>
+          <FormControl>
+            <Input
+              type="number"
+              step="any"
+              min={0}
+              max={availableUSD}
+              placeholder="Enter amount in USD"
+              value={usdAmount}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsdAmount(e.target.value)}
+              disabled={!price}
+            />
+          </FormControl>
+          <FormDescription>
+            {price
+              ? `≈ ${cryptoAmount.toFixed(6)} ${crypto} · Available: ${formatCurrency(availableUSD)} (${available.toLocaleString()} ${crypto})`
+              : "Loading live prices…"}
+          </FormDescription>
+        </FormItem>
 
         <FormField
           control={form.control}
@@ -215,18 +232,20 @@ export function WithdrawForm({ balances }: WithdrawFormProps) {
           <p className="flex items-center justify-between">
             <span>Estimated network fee</span>
             <span className="font-semibold">
-              {networkFee.toFixed(6)} {crypto}
+              {networkFee.toFixed(6)} {crypto} ({formatCurrency(networkFee * price)})
             </span>
           </p>
           <p className="flex items-center justify-between">
             <span>Estimated payout</span>
             <span className="font-semibold">
-              {finalAmount > 0 ? finalAmount.toFixed(6) : "—"} {crypto}
+              {finalAmount > 0
+                ? `${finalAmount.toFixed(6)} ${crypto} (${formatCurrency(finalAmount * price)})`
+                : "—"}
             </span>
           </p>
         </div>
 
-        <Button type="submit" disabled={isSubmitting} className="w-full">
+        <Button type="submit" disabled={isSubmitting || !price || usdNumber <= 0} className="w-full">
           {isSubmitting ? "Submitting…" : "Request withdrawal"}
         </Button>
       </form>

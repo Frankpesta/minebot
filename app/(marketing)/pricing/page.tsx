@@ -62,7 +62,7 @@ export default async function PricingPage() {
             `${hashRateDisplay} hash rate`,
             `Duration: ${plan.duration} days`,
             `Supported coins: ${supportedCoinsDisplay}`,
-            `Estimated daily earning: ${formatCurrency(plan.estimatedDailyEarning)}`,
+            `Daily ROI: ${plan.dailyROI}%`,
           ],
       cta: "Get started",
       highlight: index === Math.floor(backendPlans.length / 2), // Highlight middle plan

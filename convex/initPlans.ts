@@ -27,14 +27,12 @@ export const initializePlans = internalMutation({
       maxPriceUSD: 2997.01,
       priceUSD: 1754.22, // Average of min and max
       supportedCoins: ["BTC", "ETH", "LTC", "SOL", "BNB", "ADA", "XRP", "DOGE", "DOT", "MATIC", "AVAX", "ATOM", "LINK", "UNI"],
-      minDailyROI: 0.5, // 0.5%
-      maxDailyROI: 0.7, // 0.7%
-      estimatedDailyEarning: 10.53, // Average of (0.5% + 0.7%) / 2 * avgPrice
+      dailyROI: 0.075, // 0.075%
       isActive: true,
       features: [
         "500 Gh/s HashPower",
         "1 Month Contract Duration",
-        "0.5% - 0.7% Daily ROI",
+        "0.075% Daily ROI",
         "Ideal for small investors",
         "Entry: $511.43 - $2,997.01",
       ],
@@ -54,14 +52,12 @@ export const initializePlans = internalMutation({
       maxPriceUSD: 10115.70,
       priceUSD: 6565.36, // Average of min and max
       supportedCoins: ["BTC", "ETH", "LTC", "SOL", "BNB", "ADA", "XRP", "DOGE", "DOT", "MATIC", "AVAX", "ATOM", "LINK", "UNI"],
-      minDailyROI: 0.8, // 0.8%
-      maxDailyROI: 1.0, // 1.0%
-      estimatedDailyEarning: 59.09, // Average of (0.8% + 1.0%) / 2 * avgPrice
+      dailyROI: 0.115, // 0.115%
       isActive: true,
       features: [
         "70 Th/s HashPower",
         "3 Months Contract Duration",
-        "0.8% - 1.0% Daily ROI",
+        "0.115% Daily ROI",
         "Ideal for grown investors",
         "Entry: $3,015.02 - $10,115.70",
       ],
@@ -81,14 +77,12 @@ export const initializePlans = internalMutation({
       maxPriceUSD: 19909.68,
       priceUSD: 15983.60, // Average of min and max
       supportedCoins: ["BTC", "ETH", "LTC", "SOL", "BNB", "ADA", "XRP", "DOGE", "DOT", "MATIC", "AVAX", "ATOM", "LINK", "UNI"],
-      minDailyROI: 1.4, // 1.4%
-      maxDailyROI: 1.8, // 1.8%
-      estimatedDailyEarning: 255.74, // Average of (1.4% + 1.8%) / 2 * avgPrice
+      dailyROI: 0.16, // 0.16%
       isActive: true,
       features: [
         "250 Th/s HashPower",
         "6 Months Contract Duration",
-        "1.4% - 1.8% Daily ROI",
+        "0.16% Daily ROI",
         "Ideal for high-volume investors",
         "Entry: $12,057.51 - $19,909.68",
       ],
@@ -108,14 +102,12 @@ export const initializePlans = internalMutation({
       maxPriceUSD: undefined, // Unlimited
       priceUSD: 20076.09, // Minimum price
       supportedCoins: ["BTC", "ETH", "LTC", "SOL", "BNB", "ADA", "XRP", "DOGE", "DOT", "MATIC", "AVAX", "ATOM", "LINK", "UNI"],
-      minDailyROI: 2.0, // 2.0%
-      maxDailyROI: 2.3, // 2.3%
-      estimatedDailyEarning: 431.64, // Average of (2.0% + 2.3%) / 2 * minPrice
+      dailyROI: 0.20, // 0.20%
       isActive: true,
       features: [
         "500 Th/s HashPower",
         "12 Months Contract Duration",
-        "2.0% - 2.3% Daily ROI",
+        "0.20% Daily ROI",
         "Ideal for large-scale corporate investors",
         "Entry: $20,076.09 - Unlimited",
       ],

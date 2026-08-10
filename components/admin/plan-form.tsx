@@ -28,9 +28,7 @@ const planFormSchema = z.object({
   maxPriceUSD: z.number().positive("Maximum price must be positive").optional(),
   priceUSD: z.number().positive("Price must be positive"),
   supportedCoins: z.string().min(1, "At least one coin is required"),
-  minDailyROI: z.number().positive("Minimum daily ROI must be positive"),
-  maxDailyROI: z.number().positive("Maximum daily ROI must be positive"),
-  estimatedDailyEarning: z.number().nonnegative("Daily earning must be non-negative"),
+  dailyROI: z.number().positive("Daily ROI must be positive"),
   isActive: z.boolean(),
   features: z.string().min(1, "At least one feature is required"),
   idealFor: z.string().optional(),
@@ -59,9 +57,7 @@ export function PlanForm({ planId, initialValues, onSubmit, onCancel }: PlanForm
       maxPriceUSD: initialValues?.maxPriceUSD,
       priceUSD: initialValues?.priceUSD ?? 0,
       supportedCoins: initialValues?.supportedCoins ?? "",
-      minDailyROI: initialValues?.minDailyROI ?? 0,
-      maxDailyROI: initialValues?.maxDailyROI ?? 0,
-      estimatedDailyEarning: initialValues?.estimatedDailyEarning ?? 0,
+      dailyROI: initialValues?.dailyROI ?? 0,
       isActive: initialValues?.isActive ?? true,
       features: initialValues?.features ?? "",
       idealFor: initialValues?.idealFor ?? "",
@@ -223,54 +219,12 @@ export function PlanForm({ planId, initialValues, onSubmit, onCancel }: PlanForm
             )}
           />
 
-          <div className="flex gap-4">
-            <FormField
-              control={form.control}
-              name="minDailyROI"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Min Daily ROI (%)</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="number"
-                      step="0.01"
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormDescription>Minimum daily ROI percentage</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="maxDailyROI"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Max Daily ROI (%)</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="number"
-                      step="0.01"
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormDescription>Maximum daily ROI percentage</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
           <FormField
             control={form.control}
-            name="estimatedDailyEarning"
+            name="dailyROI"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Estimated daily earning</FormLabel>
+                <FormLabel>Daily ROI (%)</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -279,7 +233,9 @@ export function PlanForm({ planId, initialValues, onSubmit, onCancel }: PlanForm
                     onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                   />
                 </FormControl>
-                <FormDescription>Estimated daily earnings in USD (for display)</FormDescription>
+                <FormDescription>
+                  Fixed daily ROI percentage applied to the purchase amount, regardless of hash rate
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

@@ -81,7 +81,7 @@ export default async function AdminMiningPackagesPage() {
                     <TableHead>Hash Rate</TableHead>
                     <TableHead>Duration</TableHead>
                     <TableHead>Price</TableHead>
-                    <TableHead>Daily Earning</TableHead>
+                    <TableHead>Daily ROI</TableHead>
                     <TableHead>Coins</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
@@ -97,7 +97,7 @@ export default async function AdminMiningPackagesPage() {
                       </TableCell>
                       <TableCell>{plan.duration} days</TableCell>
                       <TableCell>{formatCurrency(plan.priceUSD)}</TableCell>
-                      <TableCell>{formatCurrency(plan.estimatedDailyEarning)}</TableCell>
+                      <TableCell>{plan.dailyROI}%</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {plan.supportedCoins.map((coin) => (

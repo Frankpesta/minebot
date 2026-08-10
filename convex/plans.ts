@@ -49,9 +49,7 @@ export const createPlan = mutation({
     maxPriceUSD: v.optional(v.number()),
     priceUSD: v.number(), // Default/display price
     supportedCoins: v.array(v.string()),
-    minDailyROI: v.number(), // Minimum daily ROI percentage
-    maxDailyROI: v.number(), // Maximum daily ROI percentage
-    estimatedDailyEarning: v.number(), // Average daily earning
+    dailyROI: v.number(), // Fixed daily ROI percentage, independent of hash rate
     isActive: v.boolean(),
     features: v.array(v.string()),
     idealFor: v.optional(v.string()),
@@ -84,9 +82,7 @@ export const updatePlan = mutation({
     maxPriceUSD: v.optional(v.number()),
     priceUSD: v.optional(v.number()),
     supportedCoins: v.optional(v.array(v.string())),
-    minDailyROI: v.optional(v.number()),
-    maxDailyROI: v.optional(v.number()),
-    estimatedDailyEarning: v.optional(v.number()),
+    dailyROI: v.optional(v.number()),
     isActive: v.optional(v.boolean()),
     features: v.optional(v.array(v.string())),
     idealFor: v.optional(v.string()),
@@ -205,17 +201,6 @@ export const purchasePlan = mutation({
     // Duration is in days, convert to milliseconds
     const endTime = now + plan.duration * 24 * 60 * 60 * 1000;
 
-    // Calculate initial daily ROI rate (randomized within range if available, otherwise use estimatedDailyEarning)
-    let randomROI: number;
-    if (plan.minDailyROI !== undefined && plan.maxDailyROI !== undefined) {
-      const roiRange = plan.maxDailyROI - plan.minDailyROI;
-      randomROI = plan.minDailyROI + Math.random() * roiRange;
-    } else {
-      // Fallback: calculate ROI from estimatedDailyEarning and purchaseAmount
-      // This is for backward compatibility with old plans
-      randomROI = (plan.estimatedDailyEarning / purchaseAmount) * 100;
-    }
-    
     const operationId = await ctx.db.insert("miningOperations", {
       userId: args.userId,
       planId: args.planId,
@@ -226,7 +211,7 @@ export const purchasePlan = mutation({
       startTime: now,
       endTime,
       totalMined: 0,
-      currentRate: randomROI, // Store daily ROI percentage
+      currentRate: plan.dailyROI, // Store daily ROI percentage
       lastPayoutDate: undefined, // Will be set on first payout
       status: "active",
       pausedBy: undefined,

@@ -33,7 +33,7 @@ type Plan = {
   duration: number;
   priceUSD: number;
   supportedCoins: string[];
-  estimatedDailyEarning: number;
+  dailyROI: number;
   features: string[];
 };
 
@@ -85,10 +85,8 @@ function PlanCard({ plan, userId, userBalance }: PlanCardProps) {
       </CardHeader>
       <CardContent className="flex-1 space-y-4">
         <div>
-          <p className="text-sm font-semibold text-muted-foreground">Estimated daily earnings</p>
-          <p className="text-lg font-semibold text-emerald-500">
-            {formatCurrency(plan.estimatedDailyEarning)}
-          </p>
+          <p className="text-sm font-semibold text-muted-foreground">Daily ROI</p>
+          <p className="text-lg font-semibold text-emerald-500">{plan.dailyROI}%</p>
         </div>
 
         <div>

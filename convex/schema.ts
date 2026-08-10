@@ -159,9 +159,7 @@ export default defineSchema({
     maxPriceUSD: v.optional(v.number()), // Maximum entry amount (optional for unlimited)
     priceUSD: v.number(), // Default/display price (required for backward compatibility)
     supportedCoins: v.array(v.string()),
-    minDailyROI: v.optional(v.number()), // Minimum daily ROI percentage (e.g., 0.5 for 0.5%)
-    maxDailyROI: v.optional(v.number()), // Maximum daily ROI percentage (e.g., 0.7 for 0.7%)
-    estimatedDailyEarning: v.number(), // Average daily earning (for display)
+    dailyROI: v.number(), // Fixed daily ROI percentage (e.g., 0.5 for 0.5%), independent of hash rate
     isActive: v.boolean(),
     features: v.array(v.string()),
     idealFor: v.optional(v.string()), // Target audience description

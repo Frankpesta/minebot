@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useAccount, useConnect, useDisconnect, useWriteContract, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useQuery } from "convex/react";
 import { Wallet, Loader2, CheckCircle2 } from "lucide-react";
 import { parseUnits } from "viem";
 
@@ -13,6 +14,7 @@ import {
   type DepositRequestInput,
   type DepositRequestValues,
 } from "@/app/(dashboard)/dashboard/purchase-hashpower/validators";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -28,6 +30,7 @@ import { toast } from "@/components/ui/use-toast";
 import { prepareDepositTransaction } from "@/lib/wallet/deposit";
 import type { SupportedCrypto } from "@/lib/crypto/constants";
 import { MIN_DEPOSIT } from "@/lib/crypto/constants";
+import { formatCurrency } from "@/lib/utils";
 
 type WalletOption = {
   crypto: string;
@@ -52,6 +55,7 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
   });
   const [isSubmitting, startSubmit] = useTransition();
   const [submittedTxHash, setSubmittedTxHash] = useState<string>("");
+  const [usdAmount, setUsdAmount] = useState("");
 
   const walletMap = wallets.reduce<Record<string, WalletOption>>((acc, wallet) => {
     acc[wallet.crypto] = wallet;
@@ -60,6 +64,8 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
 
   const defaultCrypto = wallets[0]?.crypto ?? "ETH";
   const isDisabled = wallets.length === 0;
+
+  const prices = useQuery(api.prices.getPrices, {});
 
   const form = useForm<DepositRequestInput>({
     resolver: zodResolver(depositRequestSchema),
@@ -70,9 +76,23 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
     },
   });
 
-  const selectedCrypto = form.watch("crypto");
+  const selectedCrypto = form.watch("crypto") as SupportedCrypto;
   const selectedWallet = selectedCrypto ? walletMap[selectedCrypto] : undefined;
-  const minAmount = minimums?.[selectedCrypto as SupportedCrypto] ?? MIN_DEPOSIT[selectedCrypto as SupportedCrypto] ?? 0;
+  const minAmount = minimums?.[selectedCrypto] ?? MIN_DEPOSIT[selectedCrypto] ?? 0;
+  const price = prices?.[selectedCrypto] ?? 0;
+  const usdNumber = Number(usdAmount) || 0;
+  const cryptoAmount = price > 0 ? usdNumber / price : 0;
+  const minimumUSD = minAmount * price;
+
+  useEffect(() => {
+    form.setValue("amount", cryptoAmount);
+  }, [form, cryptoAmount]);
+
+  // Reset the USD input when the selected asset changes so amounts aren't
+  // silently re-interpreted against a different price.
+  useEffect(() => {
+    setUsdAmount("");
+  }, [selectedCrypto]);
 
   // Auto-submit deposit request when transaction is confirmed
   useEffect(() => {
@@ -94,6 +114,7 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
 
           if (response.success) {
             toast.success("Deposit request submitted automatically! Awaiting admin approval.");
+            setUsdAmount("");
             form.reset({
               crypto: selectedCrypto,
               amount: "",
@@ -174,16 +195,21 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
   };
 
   async function handleSubmit(rawValues: DepositRequestInput) {
+    if (!price) {
+      toast.error("Live pricing isn't available yet. Please try again shortly.");
+      return;
+    }
+
     const parsed = depositRequestSchema.safeParse(rawValues);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid deposit request.");
       return;
     }
 
-    const values: DepositRequestValues = parsed.data;
+    const values: DepositRequestValues = { ...parsed.data, amount: cryptoAmount };
 
     if (minAmount && values.amount < minAmount) {
-      toast.error(`Minimum deposit for ${values.crypto} is ${minAmount}.`);
+      toast.error(`Minimum deposit for ${values.crypto} is ${minAmount} (${formatCurrency(minimumUSD)}).`);
       return;
     }
 
@@ -198,6 +224,7 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
       const response = await submitDepositRequest(values);
       if (response.success) {
         toast.success("Deposit request submitted. We'll notify you once it's approved.");
+        setUsdAmount("");
         form.reset({
           crypto: values.crypto,
           amount: "",
@@ -318,47 +345,36 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
                   </select>
                 </FormControl>
                 <FormDescription>
-                  Minimum deposit: {minAmount} {selectedCrypto}
+                  Minimum deposit: {price ? `${formatCurrency(minimumUSD)} (${minAmount} ${selectedCrypto})` : `${minAmount} ${selectedCrypto}`}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => {
-              const stringValue: string = typeof field.value === "string" ? field.value : (field.value?.toString() ?? "");
-              return (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...({
-                        type: "number",
-                        step: "any",
-                        min: minAmount ?? 0,
-                        placeholder: `Enter amount in ${selectedCrypto}`,
-                        disabled: isDisabled || isLoading,
-                        value: stringValue,
-                        onChange: (e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value),
-                        onBlur: field.onBlur,
-                        name: field.name,
-                        ref: field.ref,
-                      } as React.InputHTMLAttributes<HTMLInputElement>)}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {isConnected
+          <FormItem>
+            <FormLabel>Amount (USD)</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                step="any"
+                min={0}
+                placeholder="Enter amount in USD"
+                value={usdAmount}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsdAmount(e.target.value)}
+                disabled={isDisabled || isLoading || !price}
+              />
+            </FormControl>
+            <FormDescription>
+              {price
+                ? `≈ ${cryptoAmount.toFixed(6)} ${selectedCrypto}. ${
+                    isConnected
                       ? "Click deposit to send transaction directly from your wallet"
-                      : "Funds must be sent from an address you control. Deposits are credited after admin review."}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
-          />
+                      : "Funds must be sent from an address you control. Deposits are credited after admin review."
+                  }`
+                : "Loading live prices…"}
+            </FormDescription>
+          </FormItem>
 
           {!isConnected && (
             <FormField
@@ -413,7 +429,7 @@ export function DepositFormWallet({ wallets, minimums }: DepositFormWalletProps)
             </p>
           ) : null}
 
-          <Button type="submit" disabled={isLoading || isDisabled} className="w-full">
+          <Button type="submit" disabled={isLoading || isDisabled || !price || usdNumber <= 0} className="w-full">
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

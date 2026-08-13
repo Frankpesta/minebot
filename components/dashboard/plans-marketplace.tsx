@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Check, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { purchasePlan } from "@/app/(dashboard)/dashboard/mining-packages/actions";
@@ -32,6 +34,8 @@ type Plan = {
   hashRateUnit: "TH/s" | "GH/s" | "MH/s";
   duration: number;
   priceUSD: number;
+  minPriceUSD?: number;
+  maxPriceUSD?: number;
   supportedCoins: string[];
   dailyROI: number;
   features: string[];
@@ -45,11 +49,25 @@ type PlanCardProps = {
 
 function PlanCard({ plan, userId, userBalance }: PlanCardProps) {
   const [isPurchasing, startPurchase] = useTransition();
-  const canAfford = userBalance >= plan.priceUSD;
+  const minAmount = plan.minPriceUSD ?? plan.priceUSD;
+  const maxAmount = plan.maxPriceUSD;
+  const [amount, setAmount] = useState(String(minAmount));
+  const canAfford = userBalance >= minAmount;
+
+  const amountNumber = Number(amount);
+  const amountError = Number.isNaN(amountNumber)
+    ? "Enter a valid amount"
+    : amountNumber < minAmount
+      ? `Minimum investment is ${formatCurrency(minAmount)}`
+      : maxAmount !== undefined && amountNumber > maxAmount
+        ? `Maximum investment is ${formatCurrency(maxAmount)}`
+        : amountNumber > userBalance
+          ? "Amount exceeds your platform balance"
+          : null;
 
   const handlePurchase = (coin: string) => {
-    if (!canAfford) {
-      toast.error("Insufficient balance. Please purchase hashpower first.");
+    if (amountError) {
+      toast.error(amountError);
       return;
     }
 
@@ -59,6 +77,7 @@ function PlanCard({ plan, userId, userBalance }: PlanCardProps) {
           userId: userId as Id<"users">,
           planId: plan._id as Id<"plans">,
           coin,
+          amountUSD: amountNumber,
         });
         toast.success(`Successfully purchased ${plan.name}! Mining operation started.`);
       } catch (error) {
@@ -78,8 +97,11 @@ function PlanCard({ plan, userId, userBalance }: PlanCardProps) {
             </CardDescription>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold">{formatCurrency(plan.priceUSD)}</p>
-            <p className="text-xs text-muted-foreground">One-time payment</p>
+            <p className="text-2xl font-bold">
+              {formatCurrency(minAmount)}
+              {maxAmount !== undefined ? ` – ${formatCurrency(maxAmount)}` : "+"}
+            </p>
+            <p className="text-xs text-muted-foreground">Investment range</p>
           </div>
         </div>
       </CardHeader>
@@ -135,8 +157,11 @@ function PlanCard({ plan, userId, userBalance }: PlanCardProps) {
             <div className="space-y-4">
               <div className="rounded-lg border border-border/60 bg-muted/40 p-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Price</span>
-                  <span className="font-semibold">{formatCurrency(plan.priceUSD)}</span>
+                  <span className="text-muted-foreground">Investment range</span>
+                  <span className="font-semibold">
+                    {formatCurrency(minAmount)}
+                    {maxAmount !== undefined ? ` – ${formatCurrency(maxAmount)}` : "+"}
+                  </span>
                 </div>
                 <div className="mt-2 flex justify-between text-sm">
                   <span className="text-muted-foreground">Duration</span>
@@ -150,6 +175,26 @@ function PlanCard({ plan, userId, userBalance }: PlanCardProps) {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor={`amount-${plan._id}`}>Amount to invest (USD)</Label>
+                <Input
+                  id={`amount-${plan._id}`}
+                  type="number"
+                  min={minAmount}
+                  max={maxAmount}
+                  step="any"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+                {amountError ? (
+                  <p className="text-xs text-destructive">{amountError}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Daily earning at purchase: {formatCurrency((plan.dailyROI / 100) * amountNumber)}
+                  </p>
+                )}
+              </div>
+
               <div>
                 <p className="mb-2 text-sm font-semibold">Select coin to mine</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -159,7 +204,7 @@ function PlanCard({ plan, userId, userBalance }: PlanCardProps) {
                       variant="outline"
                       className="w-full"
                       onClick={() => handlePurchase(coin)}
-                      disabled={isPurchasing || !canAfford}
+                      disabled={isPurchasing || !!amountError}
                     >
                       {coin}
                     </Button>

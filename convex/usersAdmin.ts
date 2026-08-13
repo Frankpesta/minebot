@@ -2,12 +2,14 @@ import { ConvexError, v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { getPriceMap } from "./prices";
 import {
   getBalanceAmount,
   setBalanceAmount,
   PLATFORM_BALANCE_FIELDS,
   MINING_BALANCE_FIELDS,
 } from "../lib/crypto/valuation";
+import { STABLECOINS } from "../lib/crypto/constants";
 
 export const listAllUsers = query({
   args: {
@@ -168,10 +170,15 @@ export const adjustUserBalance = mutation({
     userId: v.id("users"),
     balanceType: v.union(v.literal("platform"), v.literal("mining")),
     crypto: supportedCrypto,
-    amount: v.number(), // positive = add, negative = remove
+    direction: v.union(v.literal("add"), v.literal("subtract")),
+    amountUSD: v.number(),
     reason: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    if (args.amountUSD <= 0) {
+      throw new ConvexError("Amount must be greater than zero");
+    }
+
     const [admin, user] = await Promise.all([
       ctx.db.get(args.adminId),
       ctx.db.get(args.userId),
@@ -184,15 +191,24 @@ export const adjustUserBalance = mutation({
       throw new ConvexError("User not found");
     }
 
+    const prices = await getPriceMap(ctx);
+    const price = STABLECOINS.has(args.crypto) ? 1 : (prices[args.crypto] ?? 0);
+    if (price <= 0) {
+      throw new ConvexError(`Live price unavailable for ${args.crypto}`);
+    }
+
+    const cryptoDelta = args.amountUSD / price;
+    const signedDelta = args.direction === "add" ? cryptoDelta : -cryptoDelta;
+
     const targetBalance = args.balanceType === "mining" ? user.miningBalance : user.platformBalance;
     const knownFields = args.balanceType === "mining" ? MINING_BALANCE_FIELDS : PLATFORM_BALANCE_FIELDS;
 
     const currentBalance = getBalanceAmount(targetBalance, args.crypto);
-    const newBalance = currentBalance + args.amount;
+    const newBalance = currentBalance + signedDelta;
 
     if (newBalance < 0) {
       throw new ConvexError(
-        `Insufficient balance. Current ${args.crypto}: ${currentBalance}. Cannot deduct ${Math.abs(args.amount)}.`,
+        `Insufficient balance. Current ${args.crypto}: ${currentBalance}. Cannot deduct ${Math.abs(signedDelta)}.`,
       );
     }
 
@@ -214,7 +230,9 @@ export const adjustUserBalance = mutation({
         email: user.email,
         balanceType: args.balanceType,
         crypto: args.crypto,
-        amountDelta: args.amount,
+        direction: args.direction,
+        amountUSD: args.amountUSD,
+        cryptoDelta: signedDelta,
         previousBalance: currentBalance,
         newBalance,
         reason: args.reason ?? undefined,

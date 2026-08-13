@@ -11,6 +11,7 @@ export async function purchasePlan(input: {
   userId: Id<"users">;
   planId: Id<"plans">;
   coin: string;
+  amountUSD: number;
 }) {
   const current = await getCurrentUser();
   if (!current || current.user._id !== input.userId) {

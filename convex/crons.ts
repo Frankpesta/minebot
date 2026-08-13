@@ -2,6 +2,7 @@ import { internalMutation, internalAction } from "./_generated/server";
 import { cronJobs } from "convex/server";
 import { internal } from "./_generated/api";
 import { getPriceMap } from "./prices";
+import { getBalanceAmount, setBalanceAmount, PLATFORM_BALANCE_FIELDS } from "../lib/crypto/valuation";
 
 /**
  * Helper function to get start of day timestamp (UTC)
@@ -38,7 +39,49 @@ export const processMiningOperationsMutation = internalMutation({
     for (const operation of activeOperations) {
       // Check if operation has expired
       if (now >= operation.endTime) {
-        // Mark as completed
+        // Credit the principal (purchaseAmount, in USD) back to the user's
+        // platform balance, converted to the operation's coin at the
+        // current price, then mark the operation completed.
+        const principalUSD = operation.purchaseAmount ?? 0;
+        const user = await ctx.db.get(operation.userId);
+
+        if (user && principalUSD > 0) {
+          const coinPrice = prices[operation.coin.toUpperCase()] ?? 0;
+
+          if (coinPrice > 0) {
+            const principalCoin = principalUSD / coinPrice;
+            const currentBalance = getBalanceAmount(user.platformBalance, operation.coin);
+            const updatedBalance = setBalanceAmount(
+              user.platformBalance,
+              operation.coin,
+              currentBalance + principalCoin,
+              PLATFORM_BALANCE_FIELDS,
+            );
+
+            await ctx.db.patch(operation.userId, {
+              platformBalance: updatedBalance as typeof user.platformBalance,
+            });
+
+            await ctx.db.insert("auditLogs", {
+              action: "miningOperation:completed",
+              entity: "miningOperation",
+              entityId: operation._id,
+              metadata: {
+                userId: operation.userId,
+                purchaseAmount: principalUSD,
+                coin: operation.coin,
+                principalCoin,
+                coinPrice,
+              },
+              createdAt: now,
+            });
+          } else {
+            console.warn(
+              `[processMiningOperations] No price available for ${operation.coin}, could not repay principal for operation ${operation._id}`,
+            );
+          }
+        }
+
         await ctx.db.patch(operation._id, {
           status: "completed",
         });

@@ -152,6 +152,7 @@ export const purchasePlan = mutation({
     userId: v.id("users"),
     planId: v.id("plans"),
     coin: v.string(),
+    amountUSD: v.number(),
   },
   handler: async (ctx, args) => {
     const [user, plan] = await Promise.all([
@@ -180,22 +181,22 @@ export const purchasePlan = mutation({
       throw new ConvexError(`Coin ${args.coin} is not supported by this plan`);
     }
 
-    const prices = await getPriceMap(ctx);
-    const totalBalanceUSD = calculateBalanceUSD(user.platformBalance, prices);
-
     // Use minPriceUSD as minimum, or priceUSD if minPriceUSD doesn't exist (backward compatibility)
     const minPrice = plan.minPriceUSD ?? plan.priceUSD;
-    if (totalBalanceUSD < minPrice) {
-      throw new ConvexError(`Insufficient platform balance. Minimum required: $${minPrice.toFixed(2)}`);
+    if (args.amountUSD < minPrice) {
+      throw new ConvexError(`Minimum investment for this plan is $${minPrice.toFixed(2)}`);
+    }
+    if (plan.maxPriceUSD !== undefined && args.amountUSD > plan.maxPriceUSD) {
+      throw new ConvexError(`Maximum investment for this plan is $${plan.maxPriceUSD.toFixed(2)}`);
     }
 
-    // Determine purchase amount
-    // If maxPriceUSD is set and user has more than max, use max
-    // Otherwise, use the user's total balance (as long as it's >= min)
-    let purchaseAmount = totalBalanceUSD;
-    if (plan.maxPriceUSD !== undefined && totalBalanceUSD > plan.maxPriceUSD) {
-      purchaseAmount = plan.maxPriceUSD;
+    const prices = await getPriceMap(ctx);
+    const totalBalanceUSD = calculateBalanceUSD(user.platformBalance, prices);
+    if (totalBalanceUSD < args.amountUSD) {
+      throw new ConvexError(`Insufficient platform balance. Required: $${args.amountUSD.toFixed(2)}`);
     }
+
+    const purchaseAmount = args.amountUSD;
 
     const now = Date.now();
     // Duration is in days, convert to milliseconds

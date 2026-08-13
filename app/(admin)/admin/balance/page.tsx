@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BalanceAdjustmentForm } from "@/components/admin/balance-adjustment-form";
+import { BalanceAdjustmentTabs } from "@/components/admin/balance-adjustment-form";
 
 export default async function AdminBalancePage() {
   const convex = getConvexClient();
@@ -26,11 +26,12 @@ export default async function AdminBalancePage() {
         <CardHeader>
           <CardTitle>Adjust user balance</CardTitle>
           <CardDescription>
-            Select a user, choose the asset, and enter a positive amount to add or negative to remove.
+            Select a user, choose the asset, and enter a USD amount. Use the Add or Subtract tab to
+            choose the direction.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <BalanceAdjustmentForm
+          <BalanceAdjustmentTabs
             users={users.map((u) => ({ _id: u._id, email: u.email }))}
           />
         </CardContent>

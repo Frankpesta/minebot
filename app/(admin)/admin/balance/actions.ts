@@ -11,15 +11,16 @@ export async function adjustBalanceAction(params: {
   userId: string;
   balanceType: "platform" | "mining";
   crypto: SupportedCrypto;
-  amount: number;
+  direction: "add" | "subtract";
+  amountUSD: number;
   reason?: string;
 }) {
   const current = await getCurrentUser();
   if (!current || current.user.role !== "admin") {
     return { success: false, error: "Unauthorized" };
   }
-  if (params.amount === 0) {
-    return { success: false, error: "Amount must not be zero" };
+  if (params.amountUSD <= 0) {
+    return { success: false, error: "Amount must be greater than zero" };
   }
   const convex = getConvexClient();
   try {
@@ -28,7 +29,8 @@ export async function adjustBalanceAction(params: {
       userId: params.userId as Id<"users">,
       balanceType: params.balanceType,
       crypto: params.crypto,
-      amount: params.amount,
+      direction: params.direction,
+      amountUSD: params.amountUSD,
       reason: params.reason,
     });
     revalidatePath("/admin/balance");
